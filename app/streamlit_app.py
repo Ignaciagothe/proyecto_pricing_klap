@@ -23,6 +23,82 @@ DEFAULT_MODEL_FILE = DEFAULT_DATA_DIR / "merchant_pricing_model_results.parquet"
 DEFAULT_FEATURE_FILE = DEFAULT_DATA_DIR / "merchant_pricing_feature_base.parquet"
 DEFAULT_PROPOSALS_FILE = DEFAULT_DATA_DIR / "merchant_pricing_proposals.parquet"
 PRICING_REFERENCE_FILE = BASE_DIR / "data" / "precios_actuales_klap.xlsx"
+PRICING_REFERENCE_DATA = pd.DataFrame(
+    [
+        {
+            "Segmento": "Estándar",
+            "Rango de ventas (MM CLP)": "0 a 8",
+            "Medio": "Crédito",
+            "Variable %": 1.29,
+            "Fijo UF": 0.0025,
+            "Fijo CLP (aprox)": 95,
+        },
+        {
+            "Segmento": "Estándar",
+            "Rango de ventas (MM CLP)": "0 a 8",
+            "Medio": "Débito",
+            "Variable %": 0.57,
+            "Fijo UF": 0.0025,
+            "Fijo CLP (aprox)": 95,
+        },
+        {
+            "Segmento": "Estándar",
+            "Rango de ventas (MM CLP)": "0 a 8",
+            "Medio": "Prepago",
+            "Variable %": 0.99,
+            "Fijo UF": 0.0025,
+            "Fijo CLP (aprox)": 95,
+        },
+        {
+            "Segmento": "PRO",
+            "Rango de ventas (MM CLP)": "8 a 30",
+            "Medio": "Crédito",
+            "Variable %": 1.24,
+            "Fijo UF": 0.0024,
+            "Fijo CLP (aprox)": 93,
+        },
+        {
+            "Segmento": "PRO",
+            "Rango de ventas (MM CLP)": "8 a 30",
+            "Medio": "Débito",
+            "Variable %": 0.52,
+            "Fijo UF": 0.002,
+            "Fijo CLP (aprox)": 77,
+        },
+        {
+            "Segmento": "PRO",
+            "Rango de ventas (MM CLP)": "8 a 30",
+            "Medio": "Prepago",
+            "Variable %": 0.96,
+            "Fijo UF": 0.002,
+            "Fijo CLP (aprox)": 77,
+        },
+        {
+            "Segmento": "PRO Max",
+            "Rango de ventas (MM CLP)": "30 a 75",
+            "Medio": "Crédito",
+            "Variable %": 1.24,
+            "Fijo UF": 0.0023,
+            "Fijo CLP (aprox)": 89,
+        },
+        {
+            "Segmento": "PRO Max",
+            "Rango de ventas (MM CLP)": "30 a 75",
+            "Medio": "Débito",
+            "Variable %": 0.52,
+            "Fijo UF": 0.0019,
+            "Fijo CLP (aprox)": 73,
+        },
+        {
+            "Segmento": "PRO Max",
+            "Rango de ventas (MM CLP)": "30 a 75",
+            "Medio": "Prepago",
+            "Variable %": 0.96,
+            "Fijo UF": 0.0019,
+            "Fijo CLP (aprox)": 73,
+        },
+    ]
+)
 
 
 @st.cache_data(show_spinner=False)
@@ -131,8 +207,11 @@ def main() -> None:
             )
         st.success(f"Datos cargados desde: {data_source}")
 
+        pricing_source = (
+            PRICING_REFERENCE_FILE if PRICING_REFERENCE_FILE.exists() else PRICING_REFERENCE_DATA
+        )
         pricing_rates = compute_effective_rates(
-            PRICING_REFERENCE_FILE,
+            pricing_source,
             assumed_mix=ASSUMED_MIX_DEFAULT,
             fallback_segments=FALLBACK_SEGMENTS_DEFAULT,
         )

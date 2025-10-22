@@ -18,8 +18,8 @@ data/processed/
 *.parquet
 *.csv
 *.xlsx
+!data/precios_actuales_klap.xlsx
 
 # Archivos temporales
 *.log
 *.tmp
-

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, MutableMapping, Optional
+from typing import Mapping, MutableMapping, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -43,20 +43,29 @@ class EffectiveRates:
 
 
 def compute_effective_rates(
-    pricing_path: Path,
+    pricing_source: Union[Path, str, pd.DataFrame],
     *,
     assumed_mix: Optional[Mapping[str, float]] = None,
     fallback_segments: Optional[Mapping[str, Optional[str]]] = None,
 ) -> EffectiveRates:
-    """Return weighted MDR/fixed fee per segmento using the provided pricing grid."""
-    if not pricing_path.exists():
-        raise FileNotFoundError(f"No se encontró el archivo de precios oficiales: {pricing_path}")
+    """Return weighted MDR/fixed fee per segmento using the provided pricing grid.
+
+    Accepts either a path to an Excel file or a precalculated DataFrame with the same columns.
+    """
+    if isinstance(pricing_source, (str, Path)):
+        pricing_path = Path(pricing_source)
+        if not pricing_path.exists():
+            raise FileNotFoundError(f"No se encontró el archivo de precios oficiales: {pricing_path}")
+        pricing_grid = pd.read_excel(pricing_path)
+    elif isinstance(pricing_source, pd.DataFrame):
+        pricing_grid = pricing_source.copy()
+    else:
+        raise TypeError("`pricing_source` debe ser una ruta a Excel o un DataFrame preconstruido.")
 
     mix = dict(assumed_mix or ASSUMED_MIX_DEFAULT)
     if not mix:
         raise ValueError("El mix de medios no puede ser vacío.")
 
-    pricing_grid = pd.read_excel(pricing_path)
     if "Variable %" not in pricing_grid.columns:
         raise KeyError("La grilla de precios debe contener la columna 'Variable %'.")
 
