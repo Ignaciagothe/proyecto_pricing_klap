@@ -15,11 +15,10 @@ Este repositorio contiene codigo con modelamiento y la aplicación web para gene
 - `data/`: carpeta local donde se almacenan los insumos y salidas (no se versiona).
 - `.gitignore`: evita subir datos sensibles o artefactos locales.
 
-## Preparación rápida
 
-<https://proyecto-titulo-pricing-klap.streamlit.app/>
 
-1. **Crear entorno (recomendado)**
+## Ejecución
+1. **Crear entorno**
 
    ```bash
    python -m venv .venv
@@ -29,15 +28,14 @@ Este repositorio contiene codigo con modelamiento y la aplicación web para gene
 
 2. **Colocar datos actualizados**
    - Tablas transaccionales limpias en `data/raw/` o `data/`.
-   - Parquet previos (si existen) en `data/processed/`.
-
+   
 3. **Regenerar métricas**
    - Abrir `pricing_22_10.ipynb` y ejecutar todas las celdas.
    - Se generarán:
      - `data/processed/merchant_pricing_feature_base.parquet`
      - `data/processed/merchant_pricing_model_results.parquet`
      - `data/processed/merchant_pricing_proposals.parquet`
-   - Alternativa rápida: ejecutar  
+   - Alternativa: ejecutar  
 
      ```bash
      python scripts/generate_pricing_proposals.py
@@ -47,6 +45,12 @@ Este repositorio contiene codigo con modelamiento y la aplicación web para gene
 
 ## Uso de la app:
 
+
+App deployed en:
+<https://proyecto-titulo-pricing-klap.streamlit.app/>
+
+
+Para ejecucion local:
 ```bash
 streamlit run app/streamlit_app.py
 ```
