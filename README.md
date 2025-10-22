@@ -1,5 +1,4 @@
-# Modelo de Pricing Klap – Guía para el Equipo Comercial
-
+# Modelo de Pricing Klap 
 Este repositorio contiene codigo con modelamiento y la aplicación web para generar estrategia de pricing optimizada con los datos proprcionados.
 
 1. **Planes predefinidos** con combinaciones fijo/MDR pensados para distintos patrones de uso.
