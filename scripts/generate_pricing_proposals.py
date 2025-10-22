@@ -88,6 +88,7 @@ def construir_planes(effective_rates: EffectiveRates) -> List[Dict]:
 
 
 PLANES: List[Dict] = []
+PLAN_COLUMNS = ["plan_recomendado", "plan_mdr_propuesto", "plan_fijo_propuesto", "addons_recomendados"]
 
 
 def recomendar_plan(row: pd.Series) -> Dict[str, float]:
@@ -143,10 +144,12 @@ def main() -> None:
     if not MODEL_FILE.exists():
         raise FileNotFoundError(f"No se encontró {MODEL_FILE}")
     model_df = pd.read_parquet(MODEL_FILE)
+    model_df = model_df.drop(columns=[col for col in PLAN_COLUMNS if col in model_df.columns])
     model_df = refresh_pricing_metrics(model_df, effective_rates)
 
     if FEATURE_FILE.exists():
         feature_df = pd.read_parquet(FEATURE_FILE)
+        feature_df = feature_df.drop(columns=[col for col in PLAN_COLUMNS if col in feature_df.columns])
         base_df = model_df.merge(feature_df, on="rut_comercio", how="left", suffixes=("", "_feature"))
     else:
         base_df = model_df.copy()
