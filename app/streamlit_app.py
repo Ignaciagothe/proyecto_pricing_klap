@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_DIR = BASE_DIR / "data" / "processed"
 DEFAULT_MODEL_FILE = DEFAULT_DATA_DIR / "merchant_pricing_model_results.parquet"
 DEFAULT_FEATURE_FILE = DEFAULT_DATA_DIR / "merchant_pricing_feature_base.parquet"
+DEFAULT_PROPOSALS_FILE = DEFAULT_DATA_DIR / "merchant_pricing_proposals.parquet"
 
 
 @st.cache_data(show_spinner=False)
@@ -23,9 +24,11 @@ def load_local_parquet(path: Path) -> pd.DataFrame:
 def load_sources(
     uploaded_model,
     uploaded_feature,
+    uploaded_proposals,
     default_model: Path,
     default_feature: Path,
-) -> Tuple[pd.DataFrame, pd.DataFrame, str]:
+    default_proposals: Path,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, str]:
     """Carga datos desde archivos subidos o rutas por defecto."""
     if uploaded_model is not None:
         model_df = pd.read_parquet(uploaded_model)
@@ -49,7 +52,15 @@ def load_sources(
             "Sube un archivo para continuar."
         )
 
-    return model_df, feature_df, source
+    if uploaded_proposals is not None:
+        proposal_df = pd.read_parquet(uploaded_proposals)
+    elif default_proposals.exists():
+        proposal_df = load_local_parquet(default_proposals)
+    else:
+        # si no existe propuesta, usamos merchant_pricing_base y planes sin asignar
+        proposal_df = model_df.copy()
+
+    return model_df, feature_df, proposal_df, source
 
 
 def format_currency(value: float) -> str:
@@ -91,11 +102,21 @@ def main() -> None:
         type=["parquet"],
         key="upload_feature",
     )
+    uploaded_proposals = st.sidebar.file_uploader(
+        "Propuestas comerciales (`merchant_pricing_proposals.parquet`)",
+        type=["parquet"],
+        key="upload_proposals",
+    )
 
     try:
         with st.spinner("Cargando datos..."):
-            model_df, feature_df, data_source = load_sources(
-                uploaded_model, uploaded_feature, DEFAULT_MODEL_FILE, DEFAULT_FEATURE_FILE
+            model_df, feature_df, proposal_df, data_source = load_sources(
+                uploaded_model,
+                uploaded_feature,
+                uploaded_proposals,
+                DEFAULT_MODEL_FILE,
+                DEFAULT_FEATURE_FILE,
+                DEFAULT_PROPOSALS_FILE,
             )
         st.success(f"Datos cargados desde: {data_source}")
     except FileNotFoundError as exc:
@@ -124,6 +145,18 @@ def main() -> None:
             + ", ".join(sorted(missing_cols))
         )
         st.stop()
+
+    proposal_required = {"plan_recomendado", "addons_recomendados", "plan_mdr_propuesto", "plan_fijo_propuesto"}
+    missing_proposal_cols = proposal_required - set(proposal_df.columns)
+    if missing_proposal_cols:
+        st.warning(
+            "El archivo de propuestas no contiene todas las columnas esperadas "
+            f"({', '.join(sorted(missing_proposal_cols))}). Se generarán recomendaciones básicas."
+        )
+        proposal_df = model_df.copy()
+        for col in proposal_required:
+            if col not in proposal_df.columns:
+                proposal_df[col] = "Sin información"
 
     clusters = sorted(model_df["segmento_cluster_label"].dropna().unique())
     acciones = sorted(model_df["accion_sugerida"].dropna().unique())
@@ -195,11 +228,8 @@ def main() -> None:
         scenario_df["ingreso_variable_sim"] = (
             scenario_df["monto_total_anual"] * scenario_df["klap_mdr_sim"]
         )
-        scenario_df["ingreso_fijo_sim"] = (
-            scenario_df["qtrx_total_anual"] * scenario_df["klap_fijo_sim"]
-            if "qtrx_total_anual" in scenario_df.columns
-            else 0.0
-        )
+        qtrx_total = scenario_df.get("qtrx_total_anual", 0.0)
+        scenario_df["ingreso_fijo_sim"] = qtrx_total * scenario_df["klap_fijo_sim"]
         scenario_df["ingreso_total_sim"] = (
             scenario_df["ingreso_variable_sim"] + scenario_df.get("ingreso_fijo_sim", 0.0)
         )
@@ -234,6 +264,34 @@ def main() -> None:
         delta=format_percent(avg_margin_pct - filtered["margen_pct_volumen"].mean())
         if sim_enabled and sim_targets
         else None,
+    )
+
+    st.subheader("Planes recomendados")
+    plan_cols = [
+        "rut_comercio",
+        "plan_recomendado",
+        "plan_mdr_propuesto",
+        "plan_fijo_propuesto",
+        "addons_recomendados",
+        "segmento_cluster_label",
+        "segmento_promedio_volumen",
+        "monto_total_anual",
+        "margen_estimado",
+    ]
+    plan_cols = [col for col in plan_cols if col in proposal_df.columns]
+    proposal_filtered = proposal_df.loc[
+        proposal_df["rut_comercio"].isin(scenario_df["rut_comercio"]), plan_cols
+    ].copy()
+    st.dataframe(
+        proposal_filtered.sort_values("monto_total_anual", ascending=False),
+        use_container_width=True,
+    )
+
+    st.download_button(
+        "Descargar plan recomendado (CSV)",
+        proposal_filtered.to_csv(index=False).encode("utf-8"),
+        file_name="planes_recomendados.csv",
+        mime="text/csv",
     )
 
     st.subheader("Distribución por acción sugerida")
@@ -362,6 +420,32 @@ def main() -> None:
         """
     )
     st.caption("Fuente: modelo de pricing 2024. Todos los montos en CLP.")
+
+    st.sidebar.header("Reporte ejecutivo")
+    report_sections: List[str] = [
+        f"- Comercios analizados: {len(filtered):,}",
+        f"- Volumen total (selección): {format_currency(total_volume)}",
+        f"- Margen estimado (selección): {format_currency(total_margin)}",
+        "- Clusters incluidos: " + ", ".join(cluster_filter),
+        "- Planes destacados: " + ", ".join(
+            sorted(proposal_filtered["plan_recomendado"].dropna().unique())
+        ),
+        "- Add-ons sugeridos disponibles: " + ", ".join(
+            sorted(
+                {
+                    addon.strip()
+                    for addons_str in proposal_filtered["addons_recomendados"].dropna()
+                    for addon in addons_str.split(",") if addon
+                }
+            )
+        ),
+    ]
+    st.sidebar.download_button(
+        "Descargar reporte ejecutivo",
+        "\n".join(report_sections).encode("utf-8"),
+        file_name="reporte_pricing.txt",
+        mime="text/plain",
+    )
 
 
 if __name__ == "__main__":
