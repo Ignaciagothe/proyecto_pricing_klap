@@ -1,12 +1,11 @@
 # Modelo de Pricing Klap – Guía para el Equipo Comercial
 
-Este repositorio contiene el motor analítico y la aplicación interna que sustentan la nueva estrategia comercial de Klap:
+Este repositorio contiene codigo con modelamiento y la aplicación web para generar estrategia de pricing optimizada con los datos proprcionados.
 
 1. **Planes predefinidos** con combinaciones fijo/MDR pensados para distintos patrones de uso.
 2. **Recomendaciones personalizadas** por comercio basadas en volumen, ticket medio, mix de marcas, márgenes y clusters.
-3. **Add-ons de alto valor** (omnicanal, fidelización, analytics) que capitalizan la fortaleza multiservicio de Klap y permiten incrementar ingresos del cliente y de Klap.
+3. **Add-ons de alto valor** (omnicanal, fidelización, analytics) para capitalizar el  multiservicio que ofrece klap, que es su pricipal ventaja comparativa. Se incrementar ingresos del comercio y de Klap.
 
-La información que encontrarás aquí permite al equipo comercial preparar propuestas informadas, simular ajustes y exportar listas priorizadas para ejecución.
 
 ## Estructura principal
 
@@ -47,7 +46,7 @@ La información que encontrarás aquí permite al equipo comercial preparar prop
 
      (requiere que los dos primeros parquet ya existan).
 
-## Uso de la app para el equipo comercial
+## Uso de la app:
 
 ```bash
 streamlit run app/streamlit_app.py
@@ -62,7 +61,7 @@ La app abrirá en `http://localhost:8501/` y permite:
 - **Exportar listados** personalizados (detalles por comercio, plan recomendado, add-ons) y obtener un reporte ejecutivo listo para compartir.
 - **Consultar métricas complementarias**: mix de marcas, estado actual de terminales, número de tecnologías, meses activos.
 
-## Flujo sugerido para ofertas comerciales
+## Flujo sugerido
 
 1. **Identificar prioridad**  
    - En la app filtrar por cluster (ej. “Brecha competitiva”) o acción sugerida (ej. “Ajustar MDR urgente”).
@@ -79,26 +78,8 @@ La app abrirá en `http://localhost:8501/` y permite:
    - Exportar CSV con el detalle filtrado.
    - Compartir con el ejecutivo comercial o integrarlo en campañas CRM.
 
-## Despliegue y colaboración
 
-- Guarda el código en un repositorio Git (privado o corporativo):
-
-  ```bash
-  git init
-  git add .gitignore README.md app scripts pricing_*.ipynb
-  git commit -m "Modelo de pricing Klap"
-  git remote add origin https://github.com/<organizacion>/<repo>.git
-  git push -u origin main
-  ```
-
-- Para uso remoto (ej. Streamlit Cloud) sube el repositorio y define `app/streamlit_app.py` como entry point. Asegúrate de subir o regenerar los parquet en dicho entorno.
-
-## Buenas prácticas
-
-- Mantener **datos sensibles fuera del repositorio** (`data/` está ignorada).
-- Documentar en el notebook cualquier cambio de lógica (nuevos planes, tarifas de referencia, etc.).
-- Actualizar `app/requirements.txt` si se incorporan nuevas librerías.
-- Coordinar con BI la periodicidad de actualización (sugerido: mensual) y versionar los parquet para auditoría.
+Coordinar con BI la periodicidad de actualización (sugerido: mensual) y versionar los parquet para auditoría.
 
 ## Próximos pasos sugeridos
 
@@ -109,12 +90,8 @@ La app abrirá en `http://localhost:8501/` y permite:
 
 
 
-**Preguntas frecuentes**
-
-- *¿Qué hago si la app marca que falta un archivo?*  
-  Ejecuta el notebook o el script de propuestas y vuelve a cargar los parquet.
-- *¿Puedo cambiar los planes/add-ons?*  
-  Sí. Edita la sección correspondiente en el notebook o en `scripts/generate_pricing_proposals.py` y regenera las tablas.
-- *¿Cómo comparto los resultados?*  
-  Usa los botones de descarga en la app para distribuir CSV/Reportes o integra los datos en CRM según el plan de acción.
+- *¿Si la app marca que falta un archivo?*  
+  Ejecutar el notebook o el script del repositorio para generar los archivos y cargar los parquet.
+- *¿Cambios en los posibles planes/add-ons?*  
+  Sí. Edita la sección correspondiente en el notebook o en `scripts/generate_pricing_proposals.py` y regenera las tablas con los add-ons corregidos
 
