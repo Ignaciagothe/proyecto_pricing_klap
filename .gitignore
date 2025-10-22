@@ -1,0 +1,25 @@
+# Entornos locales
+.venv/
+venv/
+env/
+__pycache__/
+.DS_Store
+
+# Config Streamlit
+.streamlit/
+
+
+# Archivos de notebooks
+*.ipynb_checkpoints
+
+# Datos sensibles o generados
+data/raw/
+data/processed/
+*.parquet
+*.csv
+*.xlsx
+
+# Archivos temporales
+*.log
+*.tmp
+
