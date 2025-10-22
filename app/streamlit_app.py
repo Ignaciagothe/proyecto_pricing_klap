@@ -1,4 +1,5 @@
 import math
+import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -8,10 +9,20 @@ import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from pricing_utils import (  # noqa: E402
+    ASSUMED_MIX_DEFAULT,
+    FALLBACK_SEGMENTS_DEFAULT,
+    compute_effective_rates,
+    refresh_pricing_metrics,
+)
 DEFAULT_DATA_DIR = BASE_DIR / "data" / "processed"
 DEFAULT_MODEL_FILE = DEFAULT_DATA_DIR / "merchant_pricing_model_results.parquet"
 DEFAULT_FEATURE_FILE = DEFAULT_DATA_DIR / "merchant_pricing_feature_base.parquet"
 DEFAULT_PROPOSALS_FILE = DEFAULT_DATA_DIR / "merchant_pricing_proposals.parquet"
+PRICING_REFERENCE_FILE = BASE_DIR / "data" / "precios_actuales_klap.xlsx"
 
 
 @st.cache_data(show_spinner=False)
@@ -119,6 +130,26 @@ def main() -> None:
                 DEFAULT_PROPOSALS_FILE,
             )
         st.success(f"Datos cargados desde: {data_source}")
+
+        pricing_rates = compute_effective_rates(
+            PRICING_REFERENCE_FILE,
+            assumed_mix=ASSUMED_MIX_DEFAULT,
+            fallback_segments=FALLBACK_SEGMENTS_DEFAULT,
+        )
+        model_df = refresh_pricing_metrics(model_df, pricing_rates)
+        feature_df = feature_df.copy()
+        proposal_df = proposal_df.copy()
+
+        if {"plan_mdr_propuesto", "plan_fijo_propuesto"}.issubset(proposal_df.columns):
+            propuestas_sin_tarifa = (
+                proposal_df["plan_mdr_propuesto"].abs().sum() < 1e-12
+                and proposal_df["plan_fijo_propuesto"].abs().sum() < 1e-6
+            )
+            if propuestas_sin_tarifa:
+                st.warning(
+                    "Las propuestas cargadas no incluyen MDR/fijo. "
+                    "Ejecuta nuevamente `python scripts/generate_pricing_proposals.py` tras regenerar los Parquet."
+                )
     except FileNotFoundError as exc:
         st.error(str(exc))
         st.stop()

@@ -6,6 +6,7 @@ Ejecutar después de regenerar merchant_pricing_model_results.parquet y merchant
 
 from pathlib import Path
 from typing import Dict, List
+import sys
 
 import pandas as pd
 
@@ -18,6 +19,16 @@ FEATURE_FILE = DATA_DIR / "merchant_pricing_feature_base.parquet"
 PRICING_FILE = BASE_DIR / "data" / "precios_actuales_klap.xlsx"
 OUTPUT_FILE = DATA_DIR / "merchant_pricing_proposals.parquet"
 
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from pricing_utils import (  # noqa: E402
+    ASSUMED_MIX_DEFAULT,
+    FALLBACK_SEGMENTS_DEFAULT,
+    EffectiveRates,
+    compute_effective_rates,
+    refresh_pricing_metrics,
+)
 
 ADDONS: List[Dict] = [
     {
@@ -41,37 +52,7 @@ ADDONS: List[Dict] = [
 ]
 
 
-def construir_planes() -> List[Dict]:
-    if not PRICING_FILE.exists():
-        raise FileNotFoundError(f"No se encontró {PRICING_FILE}")
-
-    pricing_grid = pd.read_excel(PRICING_FILE)
-    pricing_grid["Variable_pct"] = pricing_grid["Variable %"] / 100
-    pricing_matrix = pricing_grid.pivot_table(
-        index="Segmento",
-        columns="Medio",
-        values=["Variable_pct", "Fijo CLP (aprox)"],
-    )
-
-    assumed_mix = {"Crédito": 0.6, "Débito": 0.35, "Prepago": 0.05}
-
-    segment_effective = []
-    for segment in pricing_matrix.index:
-        var_cols = pricing_matrix.loc[segment, ("Variable_pct", slice(None))]
-        fijo_cols = pricing_matrix.loc[segment, ("Fijo CLP (aprox)", slice(None))]
-        var_effective = 0.0
-        fijo_effective = 0.0
-        for medio, share in assumed_mix.items():
-            if medio in var_cols.index:
-                var_effective += share * var_cols[medio]
-            if medio in fijo_cols.index:
-                fijo_effective += share * fijo_cols[medio]
-        segment_effective.append(
-            {"Segmento": segment, "mdr_effectivo": float(var_effective), "fijo_effectivo": float(fijo_effective)}
-        )
-
-    segment_mix = pd.DataFrame(segment_effective).set_index("Segmento")
-
+def construir_planes(effective_rates: EffectiveRates) -> List[Dict]:
     planes: List[Dict] = [
         {
             "nombre": "Plan Estándar",
@@ -98,18 +79,20 @@ def construir_planes() -> List[Dict]:
 
     for plan in planes:
         seg = plan["segmento_origen"]
-        if seg not in segment_mix.index:
+        if seg not in effective_rates.table.index:
             raise KeyError(f"Segmento {seg} no encontrado en la grilla oficial.")
-        plan["mdr"] = segment_mix.loc[seg, "mdr_effectivo"]
-        plan["fijo"] = segment_mix.loc[seg, "fijo_effectivo"]
+        plan["mdr"] = float(effective_rates.mdr.loc[seg])
+        plan["fijo"] = float(effective_rates.fijo.loc[seg])
 
     return planes
 
 
-PLANES = construir_planes()
+PLANES: List[Dict] = []
 
 
 def recomendar_plan(row: pd.Series) -> Dict[str, float]:
+    if not PLANES:
+        raise ValueError("No se han inicializado los planes de pricing.")
     score_plan = []
     for plan in PLANES:
         score = 0
@@ -146,9 +129,21 @@ def recomendar_addons(row: pd.Series) -> str:
 
 
 def main() -> None:
+    if not PRICING_FILE.exists():
+        raise FileNotFoundError(f"No se encontró {PRICING_FILE}")
+
+    effective_rates = compute_effective_rates(
+        PRICING_FILE,
+        assumed_mix=ASSUMED_MIX_DEFAULT,
+        fallback_segments=FALLBACK_SEGMENTS_DEFAULT,
+    )
+    global PLANES  # noqa: PLW0603
+    PLANES = construir_planes(effective_rates)
+
     if not MODEL_FILE.exists():
         raise FileNotFoundError(f"No se encontró {MODEL_FILE}")
     model_df = pd.read_parquet(MODEL_FILE)
+    model_df = refresh_pricing_metrics(model_df, effective_rates)
 
     if FEATURE_FILE.exists():
         feature_df = pd.read_parquet(FEATURE_FILE)
@@ -156,10 +151,14 @@ def main() -> None:
     else:
         base_df = model_df.copy()
 
+    base_df = refresh_pricing_metrics(base_df, effective_rates)
+
     plan_df = base_df.apply(recomendar_plan, axis=1, result_type="expand")
     base_df = pd.concat([base_df, plan_df], axis=1)
     base_df["addons_recomendados"] = base_df.apply(recomendar_addons, axis=1)
 
+    # Persistir salidas actualizadas
+    model_df.to_parquet(MODEL_FILE, index=False)
     base_df.to_parquet(OUTPUT_FILE, index=False)
     print(f"Archivo guardado en {OUTPUT_FILE}")
 
