@@ -163,9 +163,9 @@ para ejecutar localmente:
 streamlit run app/streamlit_app.py
 ```
 
-**Deployed en**: [https://proyecto-titulo-pricing-klap.streamlit.app/](https://proyecto-titulo-pricing-klap.streamlit.app/)
+Deployed en**: [https://proyecto-titulo-pricing-klap.streamlit.app/](https://proyecto-titulo-pricing-klap.streamlit.app/)
 
-**Funcionalidad** 
+**Funcionalidad
 
 Carga de Datos
 - Carga automática desde `data/processed/` si existe
