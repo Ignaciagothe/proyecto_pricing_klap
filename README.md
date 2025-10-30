@@ -1,8 +1,8 @@
-# 💰 Modelo de Pricing Inteligente - Klap
+# Sistema de Pricing Estratégico y Recomendación de Planes para Procesamiento de Pagos
 
 <div align="center">
 
-**Sistema de Pricing Estratégico y Recomendación de Planes para Procesamiento de Pagos**
+
 
 [![Streamlit App](https://img.shields.io/badge/Streamlit-Deployed-FF4B4B?style=for-the-badge&logo=streamlit)](https://proyecto-titulo-pricing-klap.streamlit.app/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python)](https://www.python.org/)
@@ -12,29 +12,28 @@
 
 ---
 
-## 📋 Descripción del Proyecto
+## Descripción del Proyecto
 
 Este repositorio contiene un **sistema completo de análisis y optimización de pricing** desarrollado para **Klap**, empresa procesadora de pagos en el mercado chileno. El proyecto surge en el contexto de la apertura del mercado tras el fin del monopolio de Transbank, posicionando a Klap como un actor competitivo mediante estrategias de pricing basadas en datos.
 
-### 🎯 Objetivos Principales
+###  Objetivos 
 
 El sistema genera automáticamente:
 
-1. **📊 Planes de Pricing Predefinidos**: Combinaciones optimizadas de MDR (Merchant Discount Rate) y tarifas fijas adaptadas a diferentes patrones de uso y volúmenes de transacción.
+1. **Planes de Pricing Predefinidos**: Combinaciones optimizadas de MDR (Merchant Discount Rate) y tarifas fijas adaptadas a diferentes patrones de uso y volúmenes de transacción.
 
-2. **🎯 Recomendaciones Personalizadas**: Propuestas individualizadas por comercio basadas en:
+2. **Recomendaciones Personalizadas**: Propuestas individualizadas por comercio basadas en:
    - Volumen transaccional anual
    - Ticket medio de compra
    - Mix de marcas (Visa/Mastercard, Crédito/Débito/Prepago)
    - Análisis de márgenes y costos
    - Segmentación por clustering (K-means)
 
-3. **🚀 Add-ons de Alto Valor**: Servicios complementarios estratégicos que capitalizan la propuesta multiservicios de Klap:
+3. **Add-ons de Alto Valor**: Servicios complementarios estratégicos que capitalizan la propuesta multiservicios de Klap:
    - **Omnicanal Plus**: Integración con billeteras digitales, QR, web checkout y marketplaces
    - **Insights & Fidelización**: Reportes avanzados, programas de puntos, marketing SMS/Email
    - **Pagos Internacionales**: Aceptación de tarjetas internacionales y pagos cross-border
 
-### 🔑 Valor Diferencial
 
 El sistema permite a Klap incrementar ingresos tanto propios como de sus comercios mediante:
 - Pricing competitivo y sostenible
@@ -44,13 +43,13 @@ El sistema permite a Klap incrementar ingresos tanto propios como de sus comerci
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura
 
 ```
 proyecto_pricing_klap/
-├── 📓 pricing_22_10.ipynb          # Notebook principal de análisis y modelamiento
-├── 📓 pricing_25oct.ipynb          # Versión actualizada del notebook (octubre 2025)
-├── 🐍 pricing_utils.py             # Módulo de utilidades y funciones auxiliares
+├── pricing_22_10.ipynb          # Notebook principal de análisis y modelamiento
+├── pricing_25oct.ipynb          # Versión actualizada del notebook (octubre 2025)
+├── pricing_utils.py             # Módulo de utilidades y funciones auxiliares
 ├── 📂 scripts/
 │   └── generate_pricing_proposals.py  # Script de generación de propuestas
 ├── 📂 app/
@@ -169,11 +168,8 @@ print(rates.fijo)  # Serie con tarifa fija por segmento
 
 ---
 
-### 🔧 Script `scripts/generate_pricing_proposals.py`
+### `scripts/generate_pricing_proposals.py` : Regenera únicamente las propuestas comerciales sin ejecutar todo el notebook.
 
-**Propósito**: Regenera únicamente las propuestas comerciales sin ejecutar todo el notebook.
-
-**Uso**:
 ```bash
 python scripts/generate_pricing_proposals.py
 ```
@@ -184,12 +180,10 @@ python scripts/generate_pricing_proposals.py
   - `merchant_pricing_model_results.parquet`
 
 **Funcionalidad**:
-- 📋 Define 3 planes principales: Estándar, PRO, PRO Max
-- 🎁 Asigna add-ons según criterios de volumen, actividad y mix de marcas
-- 💡 Genera recomendaciones personalizadas por comercio
-- 💾 Exporta `merchant_pricing_proposals.parquet`
+- Define 3 planes principales: Estándar, PRO, PRO Max
+- Asigna add-ons según criterios de volumen, actividad y mix de marcas + Genera recomendaciones personalizadas por comercio
 
-**Add-ons Implementados**:
+**Add-ons Implementados (arbitrarios prototipo**:
 
 | Add-on | Fee Mensual | Criterio de Asignación |
 |--------|-------------|------------------------|
@@ -197,9 +191,9 @@ python scripts/generate_pricing_proposals.py
 | 📊 Insights & Fidelización | $25,000 CLP | Comercios con >60% meses activos y margen positivo |
 | 🌍 Pagos Internacionales | $45,000 CLP | Comercios con >50% Visa y >$120M volumen anual |
 
----
 
-### 🎨 Aplicación Streamlit `app/streamlit_app.py`
+
+### Aplicación Webb `app/streamlit_app.py`
 
 **Propósito**: Dashboard interactivo para exploración de resultados y simulación de escenarios.
 
@@ -227,110 +221,34 @@ python scripts/generate_pricing_proposals.py
 - Mix de marcas y medios de pago
 - Métricas de actividad
 
-#### 🎯 Planes Recomendados
+#### Planes Recomendados
 - Visualización de plan asignado por comercio
 - Detalle de MDR y tarifa fija propuestos
 - Add-ons sugeridos con justificación
 
-#### 🧮 Simulador de Pricing
+####  Simulador de Pricing
 - **Ajuste de MDR**: ±1.00 puntos porcentuales por cluster
 - **Ajuste de Tarifa Fija**: ±$150 CLP por transacción
 - **Cálculo en tiempo real**: Impacto en margen absoluto y porcentual
 - **Visualización de diferencias**: Antes vs. Después
 
-#### 📤 Exportación de Resultados
+####  Exportación de Resultados
 - Descarga de CSV con datos filtrados
 - Incluye: comercio, plan recomendado, add-ons, métricas clave
 - Formato listo para CRM o seguimiento comercial
 
----
 
-## 🚀 Guía de Instalación y Ejecución
 
-### 1️⃣ Configuración del Entorno
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/Ignaciagothe/proyecto_pricing_klap.git
-cd proyecto_pricing_klap
-
-# Crear entorno virtual
-python -m venv .venv
-
-# Activar entorno
-source .venv/bin/activate  # Linux/Mac
-# .venv\Scripts\activate  # Windows
-
-# Instalar dependencias
-pip install -r app/requirements.txt
-```
-
-**Dependencias principales**:
-- `streamlit`: Framework de aplicación web
-- `pandas`: Manipulación de datos
-- `numpy`: Cálculos numéricos
-- `pyarrow`: Lectura/escritura de Parquet
-- `scikit-learn`: Clustering y machine learning
-- `openpyxl`: Lectura de archivos Excel
-
----
-
-### 2️⃣ Preparación de Datos
-
-```bash
-# Crear estructura de carpetas
-mkdir -p data/raw data/processed
-
-# Colocar datos transaccionales en data/raw/
-# Archivos esperados:
-# - Transacciones de terminales
-# - Datos de comercios
-# - Información de interchange
-# - Precios competencia (opcional)
-```
-
----
-
-### 3️⃣ Ejecución del Pipeline
-
-#### Opción A: Ejecución Completa (Recomendado)
-
-```bash
-# Abrir Jupyter Notebook
-jupyter notebook
-
-# Ejecutar pricing_22_10.ipynb (o pricing_25oct.ipynb)
-# ✅ Run All Cells
-```
-
-**Archivos generados**:
-- `data/processed/merchant_pricing_feature_base.parquet` (Features de comercios)
-- `data/processed/merchant_pricing_model_results.parquet` (Resultados del modelo)
-- `data/processed/merchant_pricing_proposals.parquet` (Propuestas comerciales)
-
-#### Opción B: Regenerar Solo Propuestas
-
-```bash
-# Si ya tienes los archivos base generados
-python scripts/generate_pricing_proposals.py
-```
-
----
-
-### 4️⃣ Lanzar Dashboard
 
 ```bash
 # Iniciar aplicación Streamlit
 streamlit run app/streamlit_app.py
-
-# La app se abrirá en http://localhost:8501/
 ```
 
 ---
 
-## 💼 Casos de Uso y Flujo Comercial
 
-### 🎯 Caso 1: Identificación de Comercios en Riesgo
+### Caso de uso 1: Identificación de Comercios en Riesgo
 
 **Objetivo**: Detectar comercios con márgenes negativos o brechas competitivas críticas.
 
@@ -348,9 +266,8 @@ streamlit run app/streamlit_app.py
 6. Exportar CSV con propuesta ajustada
 7. Coordinar con equipo comercial para renegociación
 
----
 
-### 🚀 Caso 2: Estrategia de Up-sell con Add-ons
+### Caso de uso 2: Estrategia de Up-sell con Add-ons
 
 **Objetivo**: Identificar comercios de alto valor para ofrecer servicios adicionales.
 
@@ -367,9 +284,8 @@ streamlit run app/streamlit_app.py
 5. Exportar listado para campaña CRM
 6. Hacer seguimiento de conversión
 
----
 
-### 🔄 Caso 3: Reactivación de Comercios Inactivos
+### Caso de uso 3: Reactivación de Comercios Inactivos
 
 **Objetivo**: Recuperar comercios con baja actividad o sin ventas.
 
@@ -390,13 +306,10 @@ streamlit run app/streamlit_app.py
 
 ---
 
-## 📊 Arquitectura de Datos
+## Datossets Generados
 
-### 🗃️ Archivos Generados (data/processed/)
 
-#### 1. `merchant_pricing_feature_base.parquet`
-
-**Descripción**: Dataset con características base de cada comercio.
+#### 1. `merchant_pricing_feature_base.parquet`:  características base de cada comercio.
 
 **Columnas principales**:
 | Campo | Tipo | Descripción |
@@ -412,11 +325,8 @@ streamlit run app/streamlit_app.py
 | `estado_terminal` | str | ACTIVO/STOCK/BAJA |
 | `segmento_volumen` | str | Estándar/PRO/PRO Max/Enterprise |
 
----
 
-#### 2. `merchant_pricing_model_results.parquet`
-
-**Descripción**: Resultados del modelo de pricing con métricas calculadas.
+#### 2. `merchant_pricing_model_results.parquet` : Resultados del modelo de pricing con métricas calculadas.
 
 **Columnas principales**:
 | Campo | Tipo | Descripción |
@@ -435,12 +345,12 @@ streamlit run app/streamlit_app.py
 | `accion_sugerida` | str | Acción comercial recomendada |
 
 **Clusters típicos**:
-- 🏆 **Alta contribución**: Comercios de alto valor y margen saludable
-- ⚠️ **Brecha competitiva**: Pricing menos competitivo que competencia
-- 🔴 **Margen en riesgo**: Márgenes negativos o muy bajos
-- 💤 **Baja actividad**: Pocos meses activos, necesita reactivación
-- 📈 **Optimización gradual**: Estables, con potencial de mejora
-- ⭕ **Sin ventas**: Sin transacciones en el período
+-  **Alta contribución**: Comercios de alto valor y margen saludable
+-  **Brecha competitiva**: Pricing menos competitivo que competencia
+-  **Margen en riesgo**: Márgenes negativos o muy bajos
+-  **Baja actividad**: Pocos meses activos, necesita reactivación
+-  **Optimización gradual**: Estables, con potencial de mejora
+-  **Sin ventas**: Sin transacciones en el período
 
 **Acciones sugeridas**:
 - `Reactivación`: Comercios inactivos
@@ -452,9 +362,7 @@ streamlit run app/streamlit_app.py
 
 ---
 
-#### 3. `merchant_pricing_proposals.parquet`
-
-**Descripción**: Propuestas comerciales personalizadas por comercio.
+#### 3. `merchant_pricing_proposals.parquet`: Propuestas comerciales personalizadas por comercio.
 
 **Columnas principales**:
 | Campo | Tipo | Descripción |
@@ -468,11 +376,9 @@ streamlit run app/streamlit_app.py
 | `fee_addons_total` | float | Fee mensual total de add-ons (CLP) |
 | `justificacion` | str | Razón de la recomendación |
 
----
 
-## 🔧 Configuración Avanzada
 
-### ⚙️ Personalización de Umbrales
+###  Personalización de Umbrales
 
 Editar en `pricing_utils.py`:
 
@@ -484,7 +390,7 @@ ACTION_THRESHOLDS_DEFAULT = {
 }
 ```
 
-### 🎨 Modificación de Planes y Add-ons
+### Modificación de Planes y Add-ons
 
 Editar en `scripts/generate_pricing_proposals.py`:
 
@@ -507,11 +413,9 @@ ADDONS.append({
 })
 ```
 
----
 
-## 📅 Mantenimiento y Actualización
 
-### 🔄 Frecuencia Recomendada
+## Mantenimiento y Actualización - recomendaciones
 
 **Mensual**: 
 - Actualización de datos transaccionales
@@ -528,135 +432,31 @@ ADDONS.append({
 - Actualización de tasas de intercambio
 - Revisión estratégica de segmentación
 
----
 
-### 📊 Auditoría y Versionado
+## Mejoras Futuras
 
-```bash
-# Crear snapshot de datos procesados
-mkdir -p data/snapshots/2025-10-29
-cp data/processed/*.parquet data/snapshots/2025-10-29/
-
-# Documentar cambios en umbrales o reglas
-git commit -m "Update pricing thresholds - Oct 2025"
-```
-
----
-
-## 🐛 Troubleshooting
-
-### ❓ Problema: "No se encuentran archivos Parquet"
-
-**Solución**:
-```bash
-# Ejecutar el notebook completo
-jupyter notebook pricing_22_10.ipynb
-# ✅ Run All Cells
-
-# O regenerar propuestas
-python scripts/generate_pricing_proposals.py
-```
-
----
-
-### ❓ Problema: "Clusters no tienen sentido comercial"
-
-**Posibles causas**:
-- Datos desactualizados o incompletos
-- Número de clusters inadecuado (modificar `n_clusters` en notebook)
-- Umbrales de segmentación mal calibrados
-
-**Solución**:
-1. Revisar calidad de datos de entrada
-2. Ajustar parámetros de KMeans en el notebook
-3. Validar interpretación de clusters con equipo comercial
-
----
-
-### ❓ Problema: "App Streamlit no carga datos"
-
-**Verificar**:
-```bash
-# Comprobar existencia de archivos
-ls -lh data/processed/*.parquet
-
-# Verificar permisos
-chmod 644 data/processed/*.parquet
-
-# Reiniciar app
-streamlit run app/streamlit_app.py
-```
-
----
-
-### ❓ Problema: "Add-ons no se asignan correctamente"
-
-**Depuración**:
-```python
-# En el notebook o script, activar modo debug
-for addon in ADDONS:
-    mask = df.apply(addon["criterio"], axis=1)
-    print(f"{addon['nombre']}: {mask.sum()} comercios elegibles")
-```
-
----
-
-## 🚀 Roadmap y Mejoras Futuras
-
-### 📋 Próximos Pasos Sugeridos
-
-1. **📊 Integración de Datos Reales**
+ **Integración de Datos Reales**
    - Incorporar precios pactados con cada comercio
    - Medir margen observado vs. margen modelo
    - Ajustar predicciones con data histórica de cambios de pricing
 
-2. **🎯 Refinamiento de Modelo**
+ **Refinamiento de Modelo**
+   - Benchmarking contra múltiples competidores
    - Ajustar umbrales (`THRESHOLD_*`) con feedback comercial
    - Incorporar resultados de campañas piloto
    - Entrenar modelo supervisado de churn prediction
-
-3. **💡 Análisis Avanzado**
    - Integrar elasticidad precio-demanda
-   - Modelar lifetime value por comercio
-   - Análisis de sensibilidad de márgenes
-
-4. **🔐 Seguridad y Despliegue**
-   - Implementar autenticación (SSO, VPN)
-   - Publicación interna en infraestructura corporativa
-   - Logs de auditoría de cambios de pricing
-
-5. **🤖 Automatización**
    - Pipeline automatizado de actualización (Airflow, Prefect)
    - Alertas automáticas de comercios en riesgo
    - Integración con CRM para seguimiento de propuestas
 
-6. **📈 Nuevas Funcionalidades**
-   - Simulador de escenarios de mercado
-   - Benchmarking contra múltiples competidores
-   - Análisis de canibalización entre planes
 
----
 
-## 👥 Equipo y Contacto
-
-**Desarrollado por**: Ignacia Gothe  
-**Empresa**: Klap  
-**Contexto**: Proyecto de Título - Ingeniería Civil Industrial  
-
+**Contexto**: Proyecto de Título - Ingeniería Civil Matematica y Computacional  
 **Repositorio**: [https://github.com/Ignaciagothe/proyecto_pricing_klap](https://github.com/Ignaciagothe/proyecto_pricing_klap)  
 **App Deployada**: [https://proyecto-titulo-pricing-klap.streamlit.app/](https://proyecto-titulo-pricing-klap.streamlit.app/)
 
----
 
-## 📄 Licencia
-
-Este proyecto es propiedad de **Klap** y está destinado para uso interno corporativo.
-
----
-
-## 🙏 Agradecimientos
-
-Agradecimientos especiales al equipo de Klap por proporcionar los datos y el contexto de negocio necesarios para el desarrollo de este proyecto.
 
 ---
 
