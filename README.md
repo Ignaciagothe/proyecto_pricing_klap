@@ -87,7 +87,7 @@ Pipeline
 ```
 
 
-`pricing_25oct.ipynb`: Notebook principales que ejecutan todo el pipeline de modelamiento.
+#### `pricing_25oct.ipynb`: Notebook principales que ejecutan todo el pipeline de modelamiento.
 
 **Contenido**:
 - ✅ **Exploración de Datos (EDA)**: Análisis descriptivo de transacciones, terminales y comportamiento de comercios
@@ -119,7 +119,7 @@ Pipeline
 2. `merchant_pricing_model_results.parquet`: Resultados del modelo con clusters y acciones
 
 
-`pricing_utils.py`: Librería de funciones reutilizables para cálculos de pricing.
+####  `pricing_utils.py`: Librería de funciones reutilizables para cálculos de pricing.
 
 **Funcionalidad**:
 - `compute_effective_rates()`: Calcula MDR y tarifa fija efectiva por segmento considerando mix de medios de pago
@@ -130,7 +130,7 @@ Pipeline
   - `ACTION_THRESHOLDS_DEFAULT`: Umbrales para clasificación de acciones
 
  
- `scripts/generate_pricing_proposals.py` : Regenera únicamente las propuestas comerciales sin ejecutar todo el notebook.
+####  `scripts/generate_pricing_proposals.py` : Regenera únicamente las propuestas comerciales sin ejecutar todo el notebook.
 
 ```bash
 python scripts/generate_pricing_proposals.py
@@ -154,20 +154,18 @@ python scripts/generate_pricing_proposals.py
 
 
 
-## Aplicación Webb 
+#### streamlit_app.py: Web Application: Dashboard interactivo para exploración de resultados y simulación de escenarios.
 
 para ejecutar localmente:
 
 ```bash
 # Iniciar aplicación Streamlit
 streamlit run app/streamlit_app.py
-```
-
-Web Application: Dashboard interactivo para exploración de resultados y simulación de escenarios.
+``
 
 **Deployed en**: [https://proyecto-titulo-pricing-klap.streamlit.app/](https://proyecto-titulo-pricing-klap.streamlit.app/)
 
-**Funcionalidad**:
+**Funcionalidad** 
 
 Carga de Datos
 - Carga automática desde `data/processed/` si existe
@@ -267,14 +265,6 @@ Simulador de Pricing
 | `addons_sugeridos` | list | Lista de add-ons aplicables |
 | `fee_addons_total` | float | Fee mensual total de add-ons (CLP) |
 | `justificacion` | str | Razón de la recomendación |
-
-
-
- en `pricing_utils.py` cambiar parametros de distintos umbrales (ej mínimo de meses activos )
-
-
- en `scripts/generate_pricing_proposals.py` modificar planes y add-ons
-
 
 
 #### Mantenimiento y Actualización - recomendaciones
