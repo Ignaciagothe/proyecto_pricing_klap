@@ -89,7 +89,7 @@ Pipeline
 
 #### `pricing_25oct.ipynb`: Notebook principales que ejecutan todo el pipeline de modelamiento.
 
-**Contenido**:
+Contenido:
 - ✅ **Exploración de Datos (EDA)**: Análisis descriptivo de transacciones, terminales y comportamiento de comercios
 - ✅ **Feature Engineering**: Creación de variables derivadas como:
   - Volumen anual y mensual
@@ -114,14 +114,14 @@ Pipeline
   - Monitoreo
   - Mantener/up-sell
 
-**Salidas Generadas**:
+Salidas Generadas:
 1. `merchant_pricing_feature_base.parquet`: Características base de cada comercio
 2. `merchant_pricing_model_results.parquet`: Resultados del modelo con clusters y acciones
 
 
 ####  `pricing_utils.py`: Librería de funciones reutilizables para cálculos de pricing.
 
-**Funcionalidad**:
+Funcionalidad:
 - `compute_effective_rates()`: Calcula MDR y tarifa fija efectiva por segmento considerando mix de medios de pago
 - `refresh_pricing_metrics()`: Recalcula métricas de margen y gap competitivo con ajustes de pricing
 - Constantes configurables:
@@ -161,7 +161,7 @@ para ejecutar localmente:
 ```bash
 # Iniciar aplicación Streamlit
 streamlit run app/streamlit_app.py
-``
+```
 
 **Deployed en**: [https://proyecto-titulo-pricing-klap.streamlit.app/](https://proyecto-titulo-pricing-klap.streamlit.app/)
 
