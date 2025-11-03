@@ -304,8 +304,3 @@ Simulador de Pricing
 
 
 
-<div align="center">
-
-**💳 Optimizando el futuro del procesamiento de pagos en Chile 🇨🇱**
-
-</div>
