@@ -1,9 +1,24 @@
-# Modelo de Pricing Klap 
-Este repositorio contiene codigo con modelamiento y la aplicación web para generar estrategia de pricing optimizada con los datos proprcionados.
+# Modelo de Pricing Klap
 
-1. **Planes predefinidos** con combinaciones fijo/MDR pensados para distintos patrones de uso.
-2. **Recomendaciones personalizadas** por comercio basadas en volumen, ticket medio, mix de marcas, márgenes y clusters.
-3. **Add-ons de alto valor** (omnicanal, fidelización, analytics) para capitalizar el  multiservicio que ofrece klap, que es su pricipal ventaja comparativa. Se incrementar ingresos del comercio y de Klap.
+**Versión**: 2.0 | **Actualización**: 2025-11-03
+
+Este repositorio contiene codigo con modelamiento y la aplicación web para generar estrategia de pricing optimizada con los datos proporcionados.
+
+## ✨ Características Principales (v2.0)
+
+1. **Dashboard Ejecutivo** con KPIs estratégicos y sistema de alertas proactivas
+2. **Planes predefinidos** con combinaciones fijo/MDR pensados para distintos patrones de uso
+3. **Recomendaciones personalizadas** por comercio basadas en volumen, ticket medio, mix de marcas, márgenes y clusters
+4. **Add-ons de alto valor** (omnicanal, fidelización, analytics) para capitalizar el multiservicio que ofrece Klap
+5. **Simulador avanzado** con escenarios preconfigurados (Conservador, Agresivo, Premium)
+6. **Matriz de priorización** automática de acciones comerciales
+7. **Visualizaciones analíticas** (scatter plots, distribuciones, heatmaps)
+
+## 🚨 Cambios Importantes en v2.0
+
+⚠️ **CRÍTICO**: El archivo `data/precios_actuales_klap.xlsx` ahora es **OBLIGATORIO**. La app no tiene datos hardcodeados como fallback. Esto asegura que siempre uses la fuente única de verdad para tarifas oficiales.
+
+Ver `CHANGELOG_v2.0.md` para detalles completos de cambios.
 
 
 ## Estructura principal
@@ -43,26 +58,65 @@ Este repositorio contiene codigo con modelamiento y la aplicación web para gene
 
      (requiere que los dos primeros parquet ya existan).
 
-## Uso de la app:
+## Uso de la app
 
+### Despliegue
 
 App deployed en:
 <https://proyecto-titulo-pricing-klap.streamlit.app/>
 
+### Ejecución Local
 
-Para ejecucion local:
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-La app abrirá en `http://localhost:8501/` y permite:
+La app abrirá en `http://localhost:8501/`
 
-- **Subir archivos Parquet** o usar los que están en `data/processed/`.
-- **Filtrar** por cluster (`segmento_cluster_label`), acción sugerida, segmento de volumen, etc.
-- **Ver planes recomendados** (Plan Lite, Balanced, Enterprise Flex) con el MDR/fijo propuestos y los add-ons sugeridos para cada comercio.
-- **Simular ajustes** de MDR y fijo por cluster para anticipar el efecto en márgenes antes de negociar.
-- **Exportar listados** personalizados (detalles por comercio, plan recomendado, add-ons) y obtener un reporte ejecutivo listo para compartir.
-- **Consultar métricas complementarias**: mix de marcas, estado actual de terminales, número de tecnologías, meses activos.
+### Estructura de Navegación (v2.0)
+
+La nueva versión está organizada en 4 tabs principales:
+
+#### 📊 **Tab 1: Dashboard Ejecutivo**
+Vista estratégica para toma de decisiones rápidas:
+- **KPIs principales**: Comercios totales, volumen anual, margen estimado, margen % promedio
+- **Sistema de alertas**: Identifica automáticamente comercios con margen negativo, brecha competitiva alta, o alto valor inactivo
+- **Matriz de priorización**: Score inteligente (0-100) que combina volumen, urgencia de margen y brecha competitiva
+- **Visualizaciones**: Scatter plot margen vs volumen, distribución de gap competitivo
+
+#### 🎯 **Tab 2: Análisis Detallado**
+Análisis profundo para equipos comerciales y de producto:
+- **Planes recomendados** con justificación automática (por qué se recomienda cada plan)
+- **Distribución por acción sugerida** (tablas y gráficos)
+- **Resumen por cluster analítico** con métricas agregadas
+- **Exportación de datos** en CSV
+
+#### 🎮 **Tab 3: Simulador de Escenarios**
+Herramienta para evaluar impacto de cambios en tarifas:
+- **Escenarios preconfigurados**:
+  - 🟢 Conservador: -5bps MDR, -5 CLP fijo
+  - 🟡 Igualar Transbank: -10bps MDR, -10 CLP fijo
+  - 🔴 Agresivo: -20bps MDR, -20 CLP fijo
+  - 💎 Incremento Premium: +10bps MDR, +10 CLP fijo
+- **Simulación personalizada** con sliders
+- **Comparación automática** actual vs simulado
+- **Top 20 comercios más impactados** con deltas calculados
+
+#### 📋 **Tab 4: Datos Completos**
+Acceso completo a datos detallados:
+- **Detalle por comercio** con todas las métricas
+- **Mix de marcas** (Visa/Mastercard) con explicación de impacto
+- **Exportación** de datos filtrados
+
+### Funcionalidades Principales
+
+- ✅ **Subir archivos Parquet** o usar los de `data/processed/`
+- ✅ **Filtros avanzados**: por cluster, acción sugerida, plan comercial
+- ✅ **Contador dinámico**: "Mostrando X de Y comercios"
+- ✅ **Tooltips explicativos**: Hover sobre métricas para ver definiciones
+- ✅ **Información temporal**: Muestra período de datos analizado
+- ✅ **Exportación múltiple**: CSV de planes, detalle, comparaciones
+- ✅ **Documentación integrada**: Sección expandible con definiciones y guías
 
 ## Flujo sugerido
 
