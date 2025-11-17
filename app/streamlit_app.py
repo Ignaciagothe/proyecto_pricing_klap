@@ -58,6 +58,14 @@ REQUIRED_MODEL_COLS = {
     "share_meses_activos",
 }
 
+# Columnas opcionales de la segmentación mejorada (si existen, se usan)
+OPTIONAL_ENHANCED_COLS = {
+    "segmento_comportamiento",
+    "segmento_tamaño",
+    "segmento_matriz_2d",
+    "estrategia_comercial",
+}
+
 REQUIRED_PROPOSAL_COLS = {
     "plan_recomendado",
     "addons_recomendados",
@@ -294,15 +302,25 @@ def apply_simulation(
     target_segments: List[str],
     mdr_delta: float,
     fijo_delta: float,
+    segment_column: str = "segmento_cluster_label",
 ) -> pd.DataFrame:
     """
     Aplica simulación de ajuste de tarifas usando funciones de pricing_utils.
     Elimina duplicación de lógica.
+
+    Args:
+        df: DataFrame con datos de comercios
+        target_segments: Lista de segmentos a afectar
+        mdr_delta: Cambio en MDR (puntos porcentuales)
+        fijo_delta: Cambio en fijo (CLP)
+        segment_column: Columna a usar para identificar segmentos
     """
     result = df.copy()
 
-    # Identificar comercios afectados
-    mask = result["segmento_cluster_label"].isin(target_segments)
+    # Identificar comercios afectados (usar columna especificada)
+    if segment_column not in result.columns:
+        segment_column = "segmento_cluster_label"  # Fallback
+    mask = result[segment_column].isin(target_segments)
 
     # Aplicar deltas a tarifas
     result["klap_mdr_sim"] = result["klap_mdr"].copy()
@@ -510,6 +528,202 @@ def render_action_prioritization(df: pd.DataFrame) -> None:
     )
 
 
+def render_segmentation_map(df: pd.DataFrame) -> None:
+    """Renderiza mapa estratégico de segmentación mejorada."""
+
+    # Verificar si existen las columnas de segmentación mejorada
+    tiene_segmentacion_mejorada = all(
+        col in df.columns
+        for col in ["segmento_comportamiento", "segmento_tamaño", "estrategia_comercial"]
+    )
+
+    if not tiene_segmentacion_mejorada:
+        st.info(
+            "💡 **Segmentación mejorada no disponible**\n\n"
+            "Para habilitar la vista de Mapa Estratégico, ejecuta el notebook completo "
+            "con la nueva segmentación 2D (celdas 44-45)."
+        )
+        return
+
+    st.markdown("### 🗺️ Mapa Estratégico de Segmentación")
+
+    st.markdown("""
+    **Matriz 2D**: Combina **Comportamiento** (cómo operan los comercios) × **Tamaño** (volumen transaccional)
+    para crear **micro-segmentos** con estrategias específicas.
+    """)
+
+    # Métricas globales
+    comercios_activos = df[df["monto_total_anual"] > 0]
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric(
+        "Comercios activos",
+        f"{len(comercios_activos):,}",
+        help="Comercios con ventas en el período"
+    )
+    col2.metric(
+        "Tipos de Comportamiento",
+        comercios_activos["segmento_comportamiento"].nunique(),
+        help="Clusters de comportamiento identificados"
+    )
+    col3.metric(
+        "Niveles de Tamaño",
+        comercios_activos["segmento_tamaño"].nunique(),
+        help="Rangos de volumen transaccional"
+    )
+
+    st.markdown("---")
+
+    # Distribución por comportamiento
+    st.markdown("#### 🎯 Segmentación por Comportamiento")
+
+    comportamiento_summary = comercios_activos.groupby("segmento_comportamiento").agg(
+        comercios=("rut_comercio", "count"),
+        volumen=("monto_total_anual", "sum"),
+        margen=("margen_estimado", "sum"),
+        margen_pct=("margen_pct_volumen", "mean"),
+    ).reset_index()
+
+    comportamiento_summary = comportamiento_summary.sort_values("volumen", ascending=False)
+
+    # Calcular % del total
+    total_vol = comportamiento_summary["volumen"].sum()
+    total_margin = comportamiento_summary["margen"].sum()
+    comportamiento_summary["vol_share"] = (
+        comportamiento_summary["volumen"] / total_vol * 100
+    )
+    comportamiento_summary["margin_share"] = (
+        comportamiento_summary["margen"] / total_margin * 100
+    )
+
+    # Agregar estrategia (tomar la más frecuente por segmento)
+    estrategias = comercios_activos.groupby("segmento_comportamiento")["estrategia_comercial"].agg(
+        lambda x: x.mode()[0] if len(x.mode()) > 0 else x.iloc[0]
+    )
+    comportamiento_summary["estrategia"] = comportamiento_summary["segmento_comportamiento"].map(estrategias)
+
+    st.dataframe(
+        comportamiento_summary[[
+            "segmento_comportamiento", "comercios", "volumen", "margen",
+            "vol_share", "margen_pct", "estrategia"
+        ]].style.format({
+            "volumen": format_currency,
+            "margen": format_currency,
+            "vol_share": "{:.1f}%",
+            "margen_pct": "{:.2%}",
+        }).background_gradient(subset=["vol_share"], cmap="YlOrRd"),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "segmento_comportamiento": "Segmento",
+            "comercios": "# Comercios",
+            "volumen": "Volumen Total",
+            "margen": "Margen Total",
+            "vol_share": "% del Volumen",
+            "margen_pct": "Margen % Prom.",
+            "estrategia": "Estrategia Comercial"
+        }
+    )
+
+    st.markdown("---")
+
+    # Distribución por tamaño
+    st.markdown("#### 📏 Segmentación por Tamaño")
+
+    tamaño_summary = comercios_activos.groupby("segmento_tamaño").agg(
+        comercios=("rut_comercio", "count"),
+        volumen=("monto_total_anual", "sum"),
+        margen=("margen_estimado", "sum"),
+        vol_promedio=("monto_total_anual", "mean"),
+    ).reset_index()
+
+    # Ordenar por orden lógico
+    orden_tamaño = ["Estándar", "PRO", "PRO Max", "Enterprise", "Corporativo"]
+    tamaño_summary["_orden"] = tamaño_summary["segmento_tamaño"].map(
+        {t: i for i, t in enumerate(orden_tamaño)}
+    )
+    tamaño_summary = tamaño_summary.sort_values("_orden").drop("_orden", axis=1)
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.dataframe(
+            tamaño_summary.style.format({
+                "volumen": format_currency,
+                "margen": format_currency,
+                "vol_promedio": format_currency,
+            }),
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "segmento_tamaño": "Tamaño",
+                "comercios": "# Comercios",
+                "volumen": "Volumen Total",
+                "margen": "Margen Total",
+                "vol_promedio": "Vol. Promedio"
+            }
+        )
+
+    with col2:
+        st.bar_chart(
+            tamaño_summary.set_index("segmento_tamaño")["comercios"],
+            use_container_width=True
+        )
+        st.caption("Distribución de comercios por tamaño")
+
+    st.markdown("---")
+
+    # Matriz 2D
+    st.markdown("#### 🎲 Matriz Estratégica 2D (Top 15 Combinaciones)")
+
+    matriz_2d = comercios_activos.groupby(
+        ["segmento_comportamiento", "segmento_tamaño"]
+    ).agg(
+        comercios=("rut_comercio", "count"),
+        volumen=("monto_total_anual", "sum"),
+        margen=("margen_estimado", "sum"),
+        margen_pct=("margen_pct_volumen", "mean"),
+    ).reset_index()
+
+    # Calcular importancia estratégica
+    matriz_2d["vol_share"] = matriz_2d["volumen"] / total_vol * 100
+    matriz_2d = matriz_2d.sort_values("volumen", ascending=False).head(15)
+
+    # Identificar segmentos estratégicos (top 80% del volumen)
+    matriz_2d["vol_cumsum"] = matriz_2d["vol_share"].cumsum()
+    matriz_2d["estratégico"] = matriz_2d["vol_cumsum"] <= 80
+
+    st.dataframe(
+        matriz_2d[[
+            "segmento_comportamiento", "segmento_tamaño", "comercios",
+            "volumen", "margen", "vol_share", "estratégico"
+        ]].style.format({
+            "volumen": format_currency,
+            "margen": format_currency,
+            "vol_share": "{:.1f}%",
+        }).apply(
+            lambda x: ["background-color: #d4edda" if v else "" for v in x],
+            subset=["estratégico"]
+        ),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "segmento_comportamiento": "Comportamiento",
+            "segmento_tamaño": "Tamaño",
+            "comercios": "# Comercios",
+            "volumen": "Volumen",
+            "margen": "Margen",
+            "vol_share": "% Vol.",
+            "estratégico": "⭐ Estratégico"
+        }
+    )
+
+    st.caption(
+        "💡 **Segmentos estratégicos** (marcados en verde): Representan el 80% del volumen. "
+        "Priorizar recursos comerciales en estos micro-segmentos maximiza el impacto."
+    )
+
+
 def render_advanced_visualizations(df: pd.DataFrame) -> None:
     """Renderiza visualizaciones avanzadas."""
     st.markdown("### 📈 Análisis Visual")
@@ -643,10 +857,16 @@ def render_plan_recommendations(
 def render_simulator(
     df: pd.DataFrame,
     clusters: List[str],
+    segment_column: str = "segmento_cluster_label",
 ) -> Tuple[pd.DataFrame, bool]:
     """
     Renderiza simulador mejorado con escenarios preconfigurados.
     Retorna (scenario_df, simulation_active).
+
+    Args:
+        df: DataFrame con datos de comercios
+        clusters: Lista de clusters/segmentos disponibles
+        segment_column: Columna a usar para identificar segmentos
     """
     st.markdown("### 🎮 Simulador de Escenarios")
 
@@ -731,13 +951,14 @@ def render_simulator(
             sim_targets,
             sim_mdr_delta,
             sim_fijo_delta,
+            segment_column=segment_column,
         )
 
         # Mostrar impacto estimado
         st.markdown("---")
         st.markdown("#### 📊 Impacto Estimado")
 
-        impacted = scenario_df[scenario_df["segmento_cluster_label"].isin(sim_targets)]
+        impacted = scenario_df[scenario_df[segment_column].isin(sim_targets)]
 
         margen_actual = impacted["margen_estimado"].sum()
         margen_simulado = impacted["margen_estimado_sim"].sum()
@@ -878,50 +1099,119 @@ def main() -> None:
     # Preparar opciones de filtros
     # ========================================================================
 
-    clusters = sorted(model_df["segmento_cluster_label"].dropna().unique())
-    acciones = sorted(model_df["accion_sugerida"].dropna().unique())
-    volumen_segmentos = (
-        model_df["segmento_promedio_volumen"]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
+    # Verificar si existe segmentación mejorada
+    tiene_segmentacion_mejorada = all(
+        col in model_df.columns
+        for col in ["segmento_comportamiento", "segmento_tamaño"]
     )
+
+    # Opciones de filtros (adaptar según segmentación disponible)
+    if tiene_segmentacion_mejorada:
+        comportamientos = sorted(
+            model_df["segmento_comportamiento"].dropna().unique()
+        )
+        tamaños = sorted(
+            model_df["segmento_tamaño"].dropna().unique(),
+            key=lambda x: ["Estándar", "PRO", "PRO Max", "Enterprise", "Corporativo"].index(x)
+            if x in ["Estándar", "PRO", "PRO Max", "Enterprise", "Corporativo"] else 99
+        )
+    else:
+        # Fallback a segmentación original
+        comportamientos = sorted(model_df["segmento_cluster_label"].dropna().unique())
+        tamaños = sorted(
+            model_df["segmento_promedio_volumen"].dropna().astype(str).unique()
+        )
+
+    acciones = sorted(model_df["accion_sugerida"].dropna().unique())
 
     # ========================================================================
     # SIDEBAR: Filtros
     # ========================================================================
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🔍 Filtros")
+    st.sidebar.markdown("### 🔍 Filtros de Segmentación")
 
-    cluster_filter = st.sidebar.multiselect(
-        "Cluster analítico",
-        options=clusters,
-        default=clusters,
-        help="Segmentos generados por clustering (ej: Alto valor, Brecha competitiva)"
-    )
+    if tiene_segmentacion_mejorada:
+        st.sidebar.caption(
+            "✨ **Nueva segmentación 2D activa**\n\n"
+            "Filtra comercios por comportamiento y tamaño para análisis más granular."
+        )
 
-    accion_filter = st.sidebar.multiselect(
-        "Acción sugerida",
-        options=acciones,
-        default=acciones,
-        help="Acción recomendada según reglas de negocio"
-    )
+        comportamiento_filter = st.sidebar.multiselect(
+            "🎯 Comportamiento del Comercio",
+            options=comportamientos,
+            default=comportamientos,
+            help=(
+                "Tipo de comportamiento basado en volumen, margen, actividad y brecha competitiva.\n\n"
+                "Ejemplos:\n"
+                "• Champions: Alto volumen + alto margen\n"
+                "• Potencial Alto: Alto volumen + margen mejorable\n"
+                "• En Riesgo: Margen negativo o brecha competitiva alta"
+            )
+        )
 
-    segmento_filter = st.sidebar.multiselect(
-        "Plan comercial Klap",
-        options=volumen_segmentos,
-        default=volumen_segmentos,
-        help="Segmento comercial actual (Estándar, PRO, PRO Max, Enterprise)"
-    )
+        tamaño_filter = st.sidebar.multiselect(
+            "📏 Tamaño por Volumen",
+            options=tamaños,
+            default=tamaños,
+            help=(
+                "Segmento según volumen transaccional mensual.\n\n"
+                "• Estándar: <$5MM/mes\n"
+                "• PRO: $5MM-$15MM/mes\n"
+                "• PRO Max: $15MM-$40MM/mes\n"
+                "• Enterprise: $40MM-$100MM/mes\n"
+                "• Corporativo: >$100MM/mes"
+            )
+        )
 
-    # Aplicar filtros
-    filtered = model_df[
-        model_df["segmento_cluster_label"].isin(cluster_filter)
-        & model_df["accion_sugerida"].isin(accion_filter)
-        & model_df["segmento_promedio_volumen"].astype(str).isin(segmento_filter)
-    ].copy()
+        # Filtro adicional de acción sugerida
+        accion_filter = st.sidebar.multiselect(
+            "⚡ Acción Recomendada",
+            options=acciones,
+            default=acciones,
+            help="Acción comercial sugerida por el modelo de pricing"
+        )
+
+        # Aplicar filtros con segmentación mejorada
+        filtered = model_df[
+            model_df["segmento_comportamiento"].isin(comportamiento_filter)
+            & model_df["segmento_tamaño"].isin(tamaño_filter)
+            & model_df["accion_sugerida"].isin(accion_filter)
+        ].copy()
+
+    else:
+        st.sidebar.caption(
+            "📊 **Segmentación básica**\n\n"
+            "Para habilitar la segmentación 2D mejorada, ejecuta el notebook completo."
+        )
+
+        cluster_filter = st.sidebar.multiselect(
+            "Segmento de Cluster",
+            options=comportamientos,
+            default=comportamientos,
+            help="Segmentos generados por clustering"
+        )
+
+        segmento_filter = st.sidebar.multiselect(
+            "Plan Comercial",
+            options=tamaños,
+            default=tamaños,
+            help="Plan comercial actual del comercio"
+        )
+
+        accion_filter = st.sidebar.multiselect(
+            "Acción Sugerida",
+            options=acciones,
+            default=acciones,
+            help="Acción recomendada según reglas de negocio"
+        )
+
+        # Aplicar filtros con segmentación original
+        filtered = model_df[
+            model_df["segmento_cluster_label"].isin(cluster_filter)
+            & model_df["accion_sugerida"].isin(accion_filter)
+            & model_df["segmento_promedio_volumen"].astype(str).isin(segmento_filter)
+        ].copy()
 
     st.sidebar.markdown("---")
     st.sidebar.caption(
@@ -938,12 +1228,22 @@ def main() -> None:
     # TABS PRINCIPALES
     # ========================================================================
 
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Dashboard Ejecutivo",
-        "🎯 Análisis Detallado",
-        "🎮 Simulador",
-        "📋 Datos Completos"
-    ])
+    # Determinar número de tabs según segmentación disponible
+    if tiene_segmentacion_mejorada:
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "📊 Dashboard Ejecutivo",
+            "🗺️ Mapa de Segmentación",
+            "🎯 Análisis Detallado",
+            "🎮 Simulador",
+            "📋 Datos Completos"
+        ])
+    else:
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "📊 Dashboard Ejecutivo",
+            "🎯 Análisis Detallado",
+            "🎮 Simulador",
+            "📋 Datos Completos"
+        ])
 
     # ========================================================================
     # TAB 1: Dashboard Ejecutivo
@@ -955,10 +1255,19 @@ def main() -> None:
         render_advanced_visualizations(filtered)
 
     # ========================================================================
-    # TAB 2: Análisis Detallado
+    # TAB 2: Mapa de Segmentación (solo si está disponible)
     # ========================================================================
 
-    with tab2:
+    if tiene_segmentacion_mejorada:
+        with tab2:
+            st.markdown("## 🗺️ Mapa Estratégico de Segmentación")
+            render_segmentation_map(filtered)
+
+    # ========================================================================
+    # TAB 3 (o 2 si no hay segmentación mejorada): Análisis Detallado
+    # ========================================================================
+
+    with (tab3 if tiene_segmentacion_mejorada else tab2):
         st.markdown("## 🎯 Análisis Detallado")
 
         # Planes recomendados
@@ -1016,13 +1325,25 @@ def main() -> None:
         )
 
     # ========================================================================
-    # TAB 3: Simulador
+    # TAB 4 (o 3 si no hay segmentación mejorada): Simulador
     # ========================================================================
 
-    with tab3:
+    with (tab4 if tiene_segmentacion_mejorada else tab3):
         st.markdown("## 🎮 Simulador de Escenarios")
 
-        scenario_df, sim_active = render_simulator(filtered, clusters)
+        # Determinar qué columna usar para clusters en simulador
+        if tiene_segmentacion_mejorada:
+            clusters_for_sim = sorted(model_df["segmento_comportamiento"].dropna().unique())
+            segment_col = "segmento_comportamiento"
+        else:
+            clusters_for_sim = sorted(model_df["segmento_cluster_label"].dropna().unique())
+            segment_col = "segmento_cluster_label"
+
+        scenario_df, sim_active = render_simulator(
+            filtered,
+            clusters_for_sim,
+            segment_column=segment_col
+        )
 
         if sim_active:
             st.markdown("---")
@@ -1082,10 +1403,10 @@ def main() -> None:
             st.info("👆 Activa una simulación arriba para ver el análisis comparativo")
 
     # ========================================================================
-    # TAB 4: Datos Completos
+    # TAB 5 (o 4 si no hay segmentación mejorada): Datos Completos
     # ========================================================================
 
-    with tab4:
+    with (tab5 if tiene_segmentacion_mejorada else tab4):
         st.markdown("## 📋 Datos Completos")
 
         # Detalle por comercio
