@@ -12,6 +12,9 @@ __pycache__/
 # Archivos de notebooks
 *.ipynb_checkpoints
 
+# IMPORTANTE: Limpiar outputs de notebooks antes de commit
+# Usar: jupyter nbconvert --clear-output --inplace *.ipynb
+
 # Datos sensibles o generados
 data/raw/
 data/processed/
