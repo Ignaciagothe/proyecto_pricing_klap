@@ -1,154 +1,372 @@
-# Modelo de Pricing Klap
+# Proyecto Pricing Klap
 
-**Versión**: 2.0 | **Actualización**: 2025-11-03
+Sistema integral de análisis y recomendación de pricing para plataforma de pagos en mercado chileno.
 
-Este repositorio contiene codigo con modelamiento y la aplicación web para generar estrategia de pricing optimizada con los datos proporcionados.
+## Contexto
 
-## ✨ Características Principales (v2.0)
+Este proyecto surge en el contexto de la apertura del mercado de adquirencia en Chile, tras el fin del monopolio de Transbank. El desafío principal es posicionar a Klap como un actor competitivo en un entorno altamente regulado, con múltiples participantes y acceso limitado a información confiable del mercado.
 
-1. **Dashboard Ejecutivo** con KPIs estratégicos y sistema de alertas proactivas
-2. **Planes predefinidos** con combinaciones fijo/MDR pensados para distintos patrones de uso
-3. **Recomendaciones personalizadas** por comercio basadas en volumen, ticket medio, mix de marcas, márgenes y clusters
-4. **Add-ons de alto valor** (omnicanal, fidelización, analytics) para capitalizar el multiservicio que ofrece Klap
-5. **Simulador avanzado** con escenarios preconfigurados (Conservador, Agresivo, Premium)
-6. **Matriz de priorización** automática de acciones comerciales
-7. **Visualizaciones analíticas** (scatter plots, distribuciones, heatmaps)
+El proyecto aborda la necesidad de establecer una estrategia de pricing fundamentada en datos que considere la estructura de costos del sector, el análisis competitivo, la segmentación de comercios, la estimación de márgenes y la identificación de riesgos de churn.
 
-## 🚨 Cambios Importantes en v2.0
+## Objetivos
 
-⚠️ **CRÍTICO**: El archivo `data/precios_actuales_klap.xlsx` ahora es **OBLIGATORIO**. La app no tiene datos hardcodeados como fallback. Esto asegura que siempre uses la fuente única de verdad para tarifas oficiales.
+### Objetivo General
 
-Ver `CHANGELOG_v2.0.md` para detalles completos de cambios.
+Desarrollar un modelo de pricing dinámico y un sistema de recomendaciones que permita a Klap optimizar sus tarifas, maximizar rentabilidad y mejorar su competitividad en el mercado.
 
+### Objetivos Específicos
 
-## Estructura principal
+1. **Análisis de Datos**: Consolidar y limpiar múltiples fuentes de datos transaccionales, tarifas y costos para construir una base analítica robusta.
 
-- `pricing_22_10.ipynb`: notebook que genera todas las métricas (márgenes, clusters, planes, add-ons). Debe ejecutarse cada vez que se actualicen datos transaccionales.
-- `scripts/generate_pricing_proposals.py`: script opcional para regenerar únicamente las propuestas comerciales (`merchant_pricing_proposals.parquet`) después de haber generado los parquet base.
-- `app/streamlit_app.py`: aplicación Streamlit para explorar resultados, simular ajustes de MDR/fijo y descargar propuestas por comercio.
-- `app/requirements.txt`: dependencias necesarias para ejecutar la app/notebook.
-- `data/`: carpeta local donde se almacenan los insumos y salidas (no se versiona).
-- `.gitignore`: evita subir datos sensibles o artefactos locales.
+2. **Modelado de Costos**: Estimar con precisión los costos de operación incluyendo tasas de intercambio y costos de marca (Visa, Mastercard) por comercio.
 
+3. **Segmentación Estratégica**: Clasificar comercios mediante una matriz bidimensional (comportamiento × tamaño) para identificar micro-segmentos con necesidades específicas.
 
+4. **Análisis Competitivo**: Calcular brechas de pricing contra competidores principales (especialmente Transbank) para cada segmento.
 
-## Ejecución
-1. **Crear entorno**
+5. **Cálculo de Márgenes**: Determinar márgenes reales por comercio considerando ingresos (MDR + comisión fija) menos costos (intercambio + marca).
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # Windows: .venv\Scripts\activate
-   pip install -r app/requirements.txt
-   ```
+6. **Detección de Riesgo**: Identificar comercios con alto riesgo de churn basado en actividad, márgenes y patrones de uso.
 
-2. **Colocar datos actualizados**
-   - Tablas transaccionales limpias en `data/raw/` o `data/`.
-   
-3. **Regenerar métricas**
-   - Abrir `pricing_22_10.ipynb` y ejecutar todas las celdas.
-   - Se generarán:
-     - `data/processed/merchant_pricing_feature_base.parquet`
-     - `data/processed/merchant_pricing_model_results.parquet`
-     - `data/processed/merchant_pricing_proposals.parquet`
-   - Alternativa: ejecutar  
+7. **Generación de Propuestas**: Crear recomendaciones de planes y ajustes tarifarios accionables por segmento.
 
-     ```bash
-     python scripts/generate_pricing_proposals.py
-     ```  
+8. **Simulación de Escenarios**: Permitir simulación del impacto financiero de cambios tarifarios antes de implementación.
 
-     (requiere que los dos primeros parquet ya existan).
+## Estructura del Repositorio
 
-## Uso de la app
-
-### Despliegue
-
-App deployed en:
-<https://proyecto-titulo-pricing-klap.streamlit.app/>
-
-### Ejecución Local
-
-```bash
-streamlit run app/streamlit_app.py
+```
+proyecto_pricing_klap/
+│
+├── main_pricingklap.ipynb          # Notebook principal con pipeline completo
+├── pricing_utils.py                # Módulo de utilidades para cálculos de pricing
+├── nueva_segmentacion.py           # Script de segmentación mejorada 2D
+├── documentacion_cambios_recientes.md  # Log de correcciones importantes
+│
+├── data/                           # Datos de entrada (gitignored)
+│   ├── Tarifas_Klap_2025.xlsx      # Grilla oficial de tarifas Klap
+│   ├── precios_Competidores.xlsx   # Tarifas de competencia
+│   ├── costos_marca_25_1.xlsx      # Costos reales de Visa/Mastercard
+│   ├── Tasa_Intercambio_Chile_*.csv # Tasas de intercambio reguladas
+│   ├── precios_actuales_klap.xlsx  # Precios actuales por segmento
+│   └── processed/                  # Archivos parquet generados
+│
+├── app/                            # Aplicación Streamlit
+│   ├── streamlit_app.py            # Dashboard interactivo
+│   └── requirements.txt            # Dependencias de la app
+│
+└── scripts/                        # Scripts auxiliares
+    ├── generate_pricing_proposals.py  # Generación de propuestas
+    └── analisis_churn_y_calidad.py    # Análisis de churn y validaciones
 ```
 
-La app abrirá en `http://localhost:8501/`
+## Detalles de Implementación
 
-### Estructura de Navegación (v2.0)
+### 1. Pipeline de Procesamiento de Datos
 
-La nueva versión está organizada en 4 tabs principales:
+#### Fuente de Datos Principal
 
-#### 📊 **Tab 1: Dashboard Ejecutivo**
-Vista estratégica para toma de decisiones rápidas:
-- **KPIs principales**: Comercios totales, volumen anual, margen estimado, margen % promedio
-- **Sistema de alertas**: Identifica automáticamente comercios con margen negativo, brecha competitiva alta, o alto valor inactivo
-- **Matriz de priorización**: Score inteligente (0-100) que combina volumen, urgencia de margen y brecha competitiva
-- **Visualizaciones**: Scatter plot margen vs volumen, distribución de gap competitivo
+`base_con_sin_trx_cleaned.csv` contiene transacciones mensuales desagregadas por terminal y comercio. Dimensiones principales:
 
-#### 🎯 **Tab 2: Análisis Detallado**
-Análisis profundo para equipos comerciales y de producto:
-- **Planes recomendados** con justificación automática (por qué se recomienda cada plan)
-- **Distribución por acción sugerida** (tablas y gráficos)
-- **Resumen por cluster analítico** con métricas agregadas
-- **Exportación de datos** en CSV
+- **Temporales**: periodo mensual, fechas de instalación/baja
+- **Identificadores**: RUT comercio, código local, número terminal
+- **Métricas transaccionales**: volumen CLP, cantidad transacciones
+- **Desglose por marca**: Visa, Mastercard, AMEX
+- **Metadata**: estado terminal, tecnología, vertical, región
 
-#### 🎮 **Tab 3: Simulador de Escenarios**
-Herramienta para evaluar impacto de cambios en tarifas:
-- **Escenarios preconfigurados**:
-  - 🟢 Conservador: -5bps MDR, -5 CLP fijo
-  - 🟡 Igualar Transbank: -10bps MDR, -10 CLP fijo
-  - 🔴 Agresivo: -20bps MDR, -20 CLP fijo
-  - 💎 Incremento Premium: +10bps MDR, +10 CLP fijo
-- **Simulación personalizada** con sliders
-- **Comparación automática** actual vs simulado
-- **Top 20 comercios más impactados** con deltas calculados
+#### Correcciones Críticas Implementadas
 
-#### 📋 **Tab 4: Datos Completos**
-Acceso completo a datos detallados:
-- **Detalle por comercio** con todas las métricas
-- **Mix de marcas** (Visa/Mastercard) con explicación de impacto
-- **Exportación** de datos filtrados
+**Corrección 1 - Campo de Volumen**
 
-### Funcionalidades Principales
+Problema: Se utilizaba `monto_clp` (incluye ingresos no tarjeta) en lugar de `monto_adquriencia_general` (solo tarjetas).
 
-- ✅ **Subir archivos Parquet** o usar los de `data/processed/`
-- ✅ **Filtros avanzados**: por cluster, acción sugerida, plan comercial
-- ✅ **Contador dinámico**: "Mostrando X de Y comercios"
-- ✅ **Tooltips explicativos**: Hover sobre métricas para ver definiciones
-- ✅ **Información temporal**: Muestra período de datos analizado
-- ✅ **Exportación múltiple**: CSV de planes, detalle, comparaciones
-- ✅ **Documentación integrada**: Sección expandible con definiciones y guías
+Impacto: 84% de filas con discrepancias, brecha total de 8.58 billones CLP.
 
-## Flujo sugerido
+Solución: Migración completa a `monto_adquriencia_general` como métrica base.
 
-1. **Identificar prioridad**  
-   - En la app filtrar por cluster (ej. “Brecha competitiva”) o acción sugerida (ej. “Ajustar MDR urgente”).
-   - Revisar el volumen y margen asociados al grupo.
+**Corrección 2 - Costos de Marca**
 
-2. **Revisión de plan recomendado**  
-   - Confirmar que el plan propuesto tiene sentido con el comportamiento del comercio (ticket, volumen, tecnologías).
-   - Ajustar con el simulador si se desea evaluar un MDR alternativo.
+Problema: Costos de marca aparecían como 0% para Visa y Mastercard.
 
-3. **Evaluar add-ons**  
-   - Ver cuáles add-ons se sugieren (Omnicanal Plus, Insights & Fidelización, Pagos Internacionales) y comunicar la propuesta de valor asociada.
+Solución: Integración de `costos_marca_25_1.xlsx`:
+- Mastercard: 0.36% - 0.45%
+- Visa: 0.12% - 0.24%
 
-4. **Descargar lista y coordinar acción**  
-   - Exportar CSV con el detalle filtrado.
-   - Compartir con el ejecutivo comercial o integrarlo en campañas CRM.
+**Corrección 3 - Modelo de Precios**
 
+Problema: No se calculaban MDR, ingresos ni márgenes con grilla real.
 
-Coordinar con BI la periodicidad de actualización (sugerido: mensual) y versionar los parquet para auditoría.
+Solución: Módulo `pricing_utils.py` con funciones especializadas.
 
-## Próximos pasos sugeridos
+**Corrección 4 - Métricas de Riesgo**
 
-1. Incorporar precios reales pactados con cada comercio para medir margen observado vs. margen modelo.
-2. Ajustar umbrales (`THRESHOLD_*`) con feedback del equipo comercial y resultados piloto.
-3. Integrar datos de elasticidad o churn para reforzar decisiones de descuentos.
-4. Evaluar autenticación y publicación interna (VPN o SSO) si se expone la app fuera del entorno controlado.
+Problema: No había análisis de churn ni clasificación por nivel de riesgo.
 
+Solución: Marco de churn operacional con 5 categorías.
 
+#### Agregación Comercio-Mes
 
-- *¿Si la app marca que falta un archivo?*  
-  Ejecutar el notebook o el script del repositorio para generar los archivos y cargar los parquet.
-- *¿Cambios en los posibles planes/add-ons?*  
-  Sí. Edita la sección correspondiente en el notebook o en `scripts/generate_pricing_proposals.py` y regenera las tablas con los add-ons corregidos
+```python
+merchant_month = (
+    df.groupby(["periodo", "rut_comercio"])
+    .agg({
+        "monto_adquriencia_general": "sum",  # Volumen de tarjetas
+        "qtrx_total": "sum",
+        "codigo_local": "nunique",
+        "numero_terminal": "nunique"
+    })
+)
+```
 
+### 2. Módulo pricing_utils.py
+
+Funciones principales:
+
+**compute_effective_rates**: Calcula MDR y fijo efectivo por segmento considerando mix de medios de pago (60% crédito, 35% débito, 5% prepago).
+
+**apply_effective_rates**: Asigna tarifas efectivas a cada comercio según su segmento.
+
+**recompute_margin_metrics**: Recalcula ingresos y márgenes:
+- Ingreso variable = volumen × MDR
+- Ingreso fijo = cantidad_transacciones × fijo
+- Margen = ingreso_total - costos
+
+**recompute_action_labels**: Clasifica comercios en acciones sugeridas según umbrales de negocio.
+
+### 3. Grilla de Tarifas
+
+Tres segmentos principales (archivo `Tarifas_Klap_2025.xlsx`):
+
+**Estándar** (0-8 MM CLP/mes):
+- Crédito: 1.29% MDR + 95 CLP
+- Débito: 0.57% MDR + 95 CLP
+- Prepago: 0.99% MDR + 95 CLP
+
+**PRO** (8-30 MM CLP/mes):
+- Crédito: 1.24% MDR + 93 CLP
+- Débito: 0.52% MDR + 77 CLP
+- Prepago: 0.96% MDR + 77 CLP
+
+**PRO Max** (30-75 MM CLP/mes):
+- Crédito: 1.24% MDR + 89 CLP
+- Débito: 0.52% MDR + 73 CLP
+- Prepago: 0.96% MDR + 73 CLP
+
+### 4. Sistema de Segmentación
+
+#### Dimensión 1: Tamaño (por volumen)
+
+Cinco niveles basados en volumen mensual promedio:
+
+- **Estándar**: 0 - 5 MM CLP/mes
+- **PRO**: 5 - 15 MM CLP/mes
+- **PRO Max**: 15 - 40 MM CLP/mes
+- **Enterprise**: 40 - 100 MM CLP/mes
+- **Corporativo**: > 100 MM CLP/mes
+
+#### Dimensión 2: Comportamiento (clustering)
+
+Clustering K-Means con 6 clusters basado en:
+- Volumen mensual promedio
+- Margen porcentual
+- Share de meses activos
+- Gap competitivo
+- Número de terminales
+
+Etiquetas generadas:
+
+1. **Champions**: Alto volumen + alto margen + alta actividad
+2. **En Riesgo Crítico**: Margen negativo
+3. **Potencial Alto**: Alto volumen, bajo margen (oportunidad)
+4. **Brecha Competitiva**: Gap alto vs competencia
+5. **Leales Rentables**: Volumen medio-alto + margen alto
+6. **Inactivos Potencial**: Baja actividad, buen volumen potencial
+7. **Básicos Estables**: Volumen bajo, margen estándar
+8. **Optimización Gradual**: Resto
+
+#### Matriz 2D Estratégica
+
+Combinación de ambas dimensiones crea hasta 40 micro-segmentos, priorizando los que representan el 80% del volumen (regla de Pareto).
+
+### 5. Análisis de Competencia
+
+Benchmark principal: **Transbank**
+
+Cálculo de gap competitivo:
+
+```python
+gap_pricing_mdr = klap_mdr - competidor_mdr
+```
+
+Umbrales de alerta:
+- Gap > 15 bps (0.0015): Brecha alta
+- Gap > 10 bps (0.0010): Brecha moderada
+- Gap > 5 bps (0.0005): Brecha baja
+
+### 6. Sistema de Acciones Sugeridas
+
+Clasificación jerárquica según condiciones:
+
+1. **Reactivación comercial**: Sin volumen en periodo
+2. **Ajustar MDR urgente**: Margen negativo o muy bajo
+3. **Revisar competitividad**: Gap > 15 bps vs Transbank
+4. **Monitorear baja actividad**: < 20% meses activos
+5. **Mantener / Upsell servicios**: Comercios saludables
+
+### 7. Análisis de Churn
+
+Marco operacional con 5 categorías:
+
+1. **Churn Formal**: Estado = BAJA/PROCESO_BAJA/BAJA_POR_PERDIDA
+2. **En alto riesgo**: share_meses_activos < 0.2 y monto_max > 0
+3. **Decreciente**: 0.2 ≤ share < 0.5 y monto_prom < 0.6 × monto_max
+4. **Saludable**: share_meses_activos ≥ 0.7 y margen ≥ 0
+5. **Irregular**: Otros casos
+
+Script `analisis_churn_y_calidad.py` genera reportes de salud por comercio y terminal.
+
+### 8. Generación de Propuestas
+
+Script `generate_pricing_proposals.py` produce archivo `merchant_pricing_proposals.parquet` con:
+
+- Plan recomendado (Estándar / PRO / PRO Max)
+- MDR y fijo propuesto
+- Add-ons sugeridos (Omnicanal Plus, Insights, Pagos Internacionales)
+- Justificación basada en perfil del comercio
+
+### 9. Dashboard Interactivo (Streamlit)
+
+`app/streamlit_app.py` proporciona:
+
+**Dashboard Ejecutivo**:
+- KPIs principales (volumen, margen, comercios)
+- Alertas críticas automáticas
+
+**Mapa de Segmentación**:
+- Visualización de matriz 2D
+- Distribución por comportamiento y tamaño
+- Identificación de segmentos estratégicos
+
+**Simulador de Escenarios**:
+- Escenarios preconfigurados (Conservador, Igualar Transbank, Agresivo)
+- Simulación personalizada de ajustes MDR y fijo
+- Impacto proyectado en márgenes e ingresos
+
+**Análisis por Comercio**:
+- Búsqueda y filtrado individual
+- Detalle completo de métricas
+- Propuestas específicas
+
+## Uso
+
+### Ejecución del Notebook Principal
+
+```bash
+# Abrir notebook en Jupyter
+jupyter notebook main_pricingklap.ipynb
+```
+
+El notebook ejecuta el pipeline completo:
+1. Carga y limpieza de datos
+2. Agregación comercio-mes
+3. Cálculo de costos y márgenes
+4. Segmentación 2D
+5. Análisis competitivo
+6. Generación de acciones
+7. Exportación de resultados
+
+### Generación de Propuestas
+
+```bash
+python scripts/generate_pricing_proposals.py
+```
+
+Genera archivo `data/processed/merchant_pricing_proposals.parquet`.
+
+### Análisis de Churn
+
+```bash
+python scripts/analisis_churn_y_calidad.py \
+    --base-csv base_con_sin_trx_cleaned.csv \
+    --brand-costs data/costos_marca_25_1.xlsx \
+    --output-dir data/processed
+```
+
+### Dashboard Interactivo
+
+```bash
+cd app
+streamlit run streamlit_app.py
+```
+
+Acceder en http://localhost:8501
+
+## Archivos de Datos Requeridos
+
+### Obligatorios
+
+- `base_con_sin_trx_cleaned.csv`: Base de transacciones
+- `data/Tarifas_Klap_2025.xlsx`: Grilla oficial de tarifas
+- `data/costos_marca_25_1.xlsx`: Costos de marca
+- `data/Tasa_Intercambio_Chile_Visa_y_Mastercard.csv`: Tasas de intercambio
+
+### Opcionales
+
+- `data/precios_Competidores.xlsx`: Tarifas de competencia
+- `data/precios_actuales_klap.xlsx`: Precios vigentes por segmento
+- `data/precios_especiales.xlsx`: Excepciones negociadas
+- `data/RUT_por_excluir_de_pricing.xlsx`: Comercios excluidos del análisis
+
+## Dependencias
+
+```
+pandas
+numpy
+scikit-learn
+matplotlib
+streamlit
+pyarrow
+openpyxl
+```
+
+Instalar con:
+
+```bash
+pip install -r app/requirements.txt
+```
+
+## Outputs Generados
+
+- `data/processed/merchant_pricing_model_results.parquet`: Resultados del modelo con todas las métricas
+- `data/processed/merchant_pricing_feature_base.parquet`: Features agregadas por comercio
+- `data/processed/merchant_pricing_proposals.parquet`: Propuestas de planes y add-ons
+- `data/processed/merchant_health.csv`: Métricas de salud y churn por comercio
+- `data/processed/terminal_health.csv`: Estado funcional de terminales
+
+## Notas Técnicas
+
+### Performance
+
+- Dataset principal: ~1.4M filas (terminales × meses)
+- Comercios únicos: ~75K
+- Tiempo de ejecución notebook completo: ~5-10 minutos
+- Dashboard: Carga datos en <5 segundos usando archivos parquet
+
+### Limitaciones Conocidas
+
+1. Mix de medios de pago asumido globalmente (ideal: calcular por comercio)
+2. Costos de marca históricos estimados (requiere validación con datos reales)
+3. Competencia limitada a 3 adquirentes (falta incorporar más competidores)
+4. Segmentación no utiliza variable MCC (tipo de comercio) aún
+
+### Próximos Desarrollos
+
+- Incorporar variable MCC en segmentación
+- Expandir análisis competitivo (más adquirentes)
+- Integrar datos de costos operacionales directos
+- Modelo predictivo de churn con ML
+- API REST para integración con sistemas CRM
+
+## Autor
+
+Proyecto de Título IMC - Ignacia Gothe, Daniel Hidalgo
+Contraparte - Klap
