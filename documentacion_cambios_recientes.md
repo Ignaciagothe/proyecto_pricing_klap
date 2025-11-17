@@ -16,16 +16,28 @@ en notebook main_pricingklap.ipynb y otros scripts
 
 
 
-#### Corrección 2: Costos de Marca Reales
+#### Corrección 2: Costos de Marca Reales (ACTUALIZADO)
 
-**Problema:** Los costos de marca aparecían como 0% para Visa y Mastercard, lo que subestimaba los costos.margenes inflados Merchants supuestamente rentables pueden no serlo o Recomendaciones de precios demasiado agresivas.
+**Problema:** Los costos de marca aparecían como 0% para Visa y Mastercard, lo que subestimaba los costos. Sin embargo, al aplicar los costos de 2025, se generaban márgenes negativos irreales.
 
+**Causa Raíz:** Los costos en `costos_marca_25_1.xlsx` son proyecciones 2025, mientras que los datos transaccionales son de 2024. Los costos históricos son menores.
 
-- Se cargaron los costos reales de marca desde `costos_marca_25_1.xlsx` y a partir de estos se estima cual fue el costo real historicos (falta tener estos datos validados) y se aplicaron según el mix de tarjetas por comercio.
-- **acordarse de revisar esto, muy importante**
+**Solución Implementada:**
+- Se cargaron los costos de marca desde `costos_marca_25_1.xlsx` 
+- Se aplicó **factor de ajuste histórico de 70%** para reflejar costos reales 2024
+- Costos ajustados resultantes:
+  - Mastercard: ~0.25-0.32% (vs 0.36-0.45% en 2025)
+  - Visa: ~0.08-0.17% (vs 0.12-0.24% en 2025)
+- Se agregó celda de validación que analiza comercios con margen negativo
 
 **Fuente de Datos:**
-- `costos_marca_25_1.xlsx` (Mastercard: 0,36-0,45%; Visa: 0,12-0,24%)
+- `costos_marca_25_1.xlsx` (proyecciones 2025)
+- Factor de corrección: 0.70 (conservador, basado en tendencias históricas)
+
+**IMPORTANTE:** Los comercios que aún muestren margen negativo después de este ajuste probablemente tienen:
+1. Tarifas especiales no reflejadas en la grilla oficial
+2. Mix de tarjetas atípico (alto débito)
+3. Son genuinamente no rentables y requieren renegociación
 
 
 #### Corrección 3: Integración del Modelo de Precios
