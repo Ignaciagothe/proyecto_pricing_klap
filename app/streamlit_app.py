@@ -4,8 +4,9 @@ Modelo de Pricing Klap - Dashboard Estratégico
 Dashboard interactivo para análisis de pricing, segmentación de comercios,
 simulación de escenarios y generación de propuestas comerciales.
 
-Versión: 2.0
-Fecha: 2025-11-03
+Versión: 2.1
+Fecha: 2025-11-17
+Incluye ajuste histórico de costos de marca 2024
 """
 
 import sys
@@ -56,6 +57,7 @@ REQUIRED_MODEL_COLS = {
     "n_terminales_max",
     "n_tecnologias_unicas",
     "share_meses_activos",
+    "costo_min_estimado",  # Crítico para validar cálculos de margen
 }
 
 # Columnas opcionales de la segmentación mejorada (si existen, se usan)
@@ -417,12 +419,17 @@ def render_executive_dashboard(df: pd.DataFrame, period_info: Dict[str, str]) ->
     margen_negativo = df[df["margen_estimado"] < 0]
     if len(margen_negativo) > 0:
         vol_riesgo = margen_negativo["monto_total_anual"].sum()
+        pct_comercios = len(margen_negativo) / len(df) * 100
         alertas.append({
             "nivel": "🔴",
             "tipo": "Margen Negativo",
             "cantidad": len(margen_negativo),
             "volumen": vol_riesgo,
-            "descripcion": f"{len(margen_negativo)} comercios con margen negativo ({format_currency(vol_riesgo)} en volumen)"
+            "descripcion": (
+                f"{len(margen_negativo)} comercios con margen negativo "
+                f"({pct_comercios:.1f}% del total, {format_currency(vol_riesgo)} en volumen). "
+                f"Probable causa: tarifas especiales no capturadas o mix de tarjetas atípico."
+            )
         })
 
     # Comercios con brecha competitiva alta
@@ -1075,6 +1082,14 @@ def main() -> None:
             proposal_df = proposal_df.copy()
 
         st.sidebar.success(f"✅ Datos cargados: {data_source}")
+        
+        # Mostrar timestamp de última actualización de archivos
+        if DEFAULT_MODEL_FILE.exists():
+            from datetime import datetime
+            mod_time = datetime.fromtimestamp(DEFAULT_MODEL_FILE.stat().st_mtime)
+            st.sidebar.caption(
+                f"📅 Archivos generados: {mod_time.strftime('%Y-%m-%d %H:%M')}"
+            )
 
         # Validar propuestas
         if {"plan_mdr_propuesto", "plan_fijo_propuesto"}.issubset(proposal_df.columns):
@@ -1482,6 +1497,9 @@ def main() -> None:
         ### Métricas Clave
 
         - **Margen estimado**: Ingresos (MDR + comisión fija) menos costos mínimos (interchange + marca)
+          - **IMPORTANTE**: Los costos de marca incluyen ajuste histórico de 70% 
+            (archivo `costos_marca_25_1.xlsx` contiene proyecciones 2025, 
+            pero datos transaccionales son 2024)
         - **Margen % volumen**: Margen estimado dividido por volumen transaccional
         - **Gap pricing MDR**: Diferencia entre MDR de Klap y benchmark Transbank
           - Positivo: Klap más caro que competencia
@@ -1490,6 +1508,18 @@ def main() -> None:
           - Volumen del comercio (impacto potencial)
           - Urgencia del margen (rentabilidad)
           - Brecha competitiva (riesgo de churn)
+        
+        ### Comercios con Margen Negativo
+        
+        Si existen comercios con margen negativo después del ajuste histórico de costos,
+        las causas probables son:
+        
+        1. **Tarifas especiales**: Descuentos negociados no reflejados en grilla oficial
+        2. **Mix de tarjetas atípico**: Alto porcentaje de débito (intercambio ~0.50%)
+        3. **Genuinamente no rentables**: Requieren renegociación o revisión de contrato
+        
+        Estos comercios aparecen con la acción "Ajustar MDR urgente" y requieren 
+        validación de tarifas reales contra la base transaccional
 
         ### Clusters Analíticos
 
@@ -1511,15 +1541,27 @@ def main() -> None:
         - **Agresivo**: Captura de mercado mediante precio
         - **Incremento Premium**: Monetización de segmentos de alto valor
 
-        ### Fuentes de Datos
+        ### Fuentes de Datos y Limitaciones
 
         - **Precios oficiales**: `data/precios_actuales_klap.xlsx` (fuente única de verdad)
-        - **Datos transaccionales**: Procesados mediante notebook de análisis
+        - **Costos de marca**: `costos_marca_25_1.xlsx` con factor de ajuste histórico 0.70
+        - **Datos transaccionales**: Procesados mediante notebook `main_pricingklap.ipynb`
         - **Benchmark competencia**: Datos públicos de Transbank
+        
+        **Limitaciones conocidas**:
+        - Mix de tarjetas asumido globalmente (60% crédito, 35% débito, 5% prepago)
+        - Costos de marca ajustados con factor histórico conservador
+        - No incluye costos operacionales directos ni overhead
+        - Competencia limitada a Transbank (falta incorporar Getnet, Redelcom)
 
         ---
 
-        **Versión**: 2.0 | **Actualización**: 2025-11-03
+        **Versión**: 2.1 | **Actualización**: 2025-11-17
+        
+        **Cambios recientes**:
+        - Ajuste histórico de costos de marca 2024 (factor 0.70)
+        - Validación mejorada de márgenes negativos
+        - Documentación de limitaciones y supuestos
 
         Para soporte o reportar problemas: contactar al equipo de Analytics.
         """)
