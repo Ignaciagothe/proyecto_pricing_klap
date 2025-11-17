@@ -56,8 +56,32 @@ proyecto_pricing_klap/
 │
 └── scripts/                        # Scripts auxiliares
     ├── generate_pricing_proposals.py  # Generación de propuestas
-    └── analisis_churn_y_calidad.py    # Análisis de churn y validaciones
+    ├── analisis_churn_y_calidad.py    # Análisis de churn y validaciones
+    └── clean_notebooks.sh              # Limpieza de outputs de notebooks
 ```
+
+## 🔒 Seguridad y Datos Confidenciales
+
+**IMPORTANTE**: Este proyecto maneja datos confidenciales de Klap. Antes de trabajar con el repositorio:
+
+1. **Limpiar notebooks antes de commit**:
+   ```bash
+   ./scripts/clean_notebooks.sh
+   ```
+
+2. **Nunca subir a Git**:
+   - Datos transaccionales (CSV/Excel con datos reales)
+   - Notebooks con outputs ejecutados
+   - Archivos parquet procesados
+   - Credenciales o API keys
+
+3. **Verificar antes de push**:
+   ```bash
+   git status
+   git diff --cached
+   ```
+
+Para más detalles, consulta [SECURITY.md](SECURITY.md).
 
 ## Detalles de Implementación
 
