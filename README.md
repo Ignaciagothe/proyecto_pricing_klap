@@ -60,10 +60,6 @@ proyecto_pricing_klap/
     └── clean_notebooks.sh              # Limpieza de outputs de notebooks
 ```
 
-## 🔒 Seguridad y Datos Confidenciales
-
-**IMPORTANTE**: Este proyecto maneja datos confidenciales de Klap. Antes de trabajar con el repositorio:
-
 1. **Limpiar notebooks antes de commit**:
    ```bash
    ./scripts/clean_notebooks.sh
@@ -81,7 +77,6 @@ proyecto_pricing_klap/
    git diff --cached
    ```
 
-Para más detalles, consulta [SECURITY.md](SECURITY.md).
 
 ## Detalles de Implementación
 
