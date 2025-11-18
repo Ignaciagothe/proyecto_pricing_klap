@@ -1,15 +1,9 @@
-# ============================================================================
-# NUEVA SEGMENTACIÓN MEJORADA: Matriz 2D Estratégica (6x5 = 30 micro-segmentos)
-# ============================================================================
 
-print("\n" + "="*80)
 print("  MEJORA DE SEGMENTACIÓN: De 4 clusters básicos a Matriz Estratégica 2D")
-print("="*80 + "\n")
 
-# -----------------------------------------------------------------------------
-# PASO 1: Aumentar granularidad de clustering (4 → 6 clusters)
-# -----------------------------------------------------------------------------
-print("📊 PASO 1: Re-clustering con 6 clusters para mayor granularidad\n")
+# Aumentar granularidad de clustering (4 → 6 clusters)
+
+print(" PASO 1: Re-clustering con 6 clusters para mayor granularidad\n")
 
 k_mejorado = 6
 kmeans_mejorado = KMeans(n_clusters=k_mejorado, random_state=42, n_init=20)
@@ -38,13 +32,10 @@ cluster_summary_6 = (
     )
 )
 
-print(f"✅ Clustering completado: {k_mejorado} clusters creados")
+print(f" Clustering completado: {k_mejorado} clusters creados")
 print(f"   Total comercios activos: {mask_activos.sum():,}\n")
 
-# -----------------------------------------------------------------------------
-# PASO 2: Asignación de etiquetas mejoradas (más granulares y accionables)
-# -----------------------------------------------------------------------------
-print("🏷️  PASO 2: Asignación de etiquetas estratégicas\n")
+#  Asignación de etiquetas mejoradas (más granulares y accionables)
 
 # Umbrales dinámicos basados en distribución
 vol_p75 = merchant_pricing_base.loc[mask_activos, "monto_promedio_mensual"].quantile(0.75)
@@ -112,7 +103,7 @@ for cluster_id, row in cluster_summary_6.iterrows():
     # 7. BÁSICOS: Volumen bajo + margen estándar
     elif vol < vol_p25 and margin >= margin_p25:
         labels_mejorado[cluster_id] = "Básicos Estables"
-        icons_segmento[cluster_id] = "📊"
+        icons_segmento[cluster_id] = ""
         estrategia_segmento[cluster_id] = "Mantener tarifas estándar"
 
     # 8. DEFAULT (resto)
@@ -138,7 +129,7 @@ merchant_pricing_base["estrategia_comercial"] = (
     .fillna("Reactivar cliente")
 )
 
-print("✅ Etiquetas asignadas a 6 clusters\n")
+print(" Etiquetas asignadas a 6 clusters\n")
 
 # -----------------------------------------------------------------------------
 # PASO 3: Segmentación por tamaño (5 niveles en lugar de 4)
@@ -155,17 +146,14 @@ merchant_pricing_base["segmento_tamaño"] = pd.cut(
     include_lowest=True,
 ).astype(str)
 
-print("✅ Segmentación por tamaño completada")
+print(" Segmentación por tamaño completada")
 print("   Rangos ajustados para mayor granularidad:\n")
 for i, label in enumerate(segment_labels_mejorado):
     rango_min = f"${segment_bins_mejorado[i]/1e6:.1f}MM" if segment_bins_mejorado[i] > 0 else "$0"
     rango_max = f"${segment_bins_mejorado[i+1]/1e6:.1f}MM" if segment_bins_mejorado[i+1] != float("inf") else "+∞"
     print(f"   • {label:12s}: {rango_min:10s} - {rango_max}")
 
-# -----------------------------------------------------------------------------
-# PASO 4: Crear Matriz 2D (Comportamiento x Tamaño)
-# -----------------------------------------------------------------------------
-print("\n🎯 PASO 4: Creación de Matriz Estratégica 2D\n")
+#  Matriz 2D (Comportamiento x Tamaño)
 
 # Crear segmento combinado
 merchant_pricing_base["segmento_matriz_2d"] = (
@@ -203,18 +191,18 @@ matriz_segmentacion = matriz_segmentacion.sort_values(
 matriz_segmentacion["vol_cumsum_pct"] = matriz_segmentacion["vol_share_pct"].cumsum()
 matriz_segmentacion["es_estrategico"] = matriz_segmentacion["vol_cumsum_pct"] <= 80
 
-print(f"✅ Matriz 2D creada: {len(matriz_segmentacion)} micro-segmentos activos")
+print(f" Matriz 2D creada: {len(matriz_segmentacion)} micro-segmentos activos")
 print(f"   Total volumen: ${total_vol:,.0f}MM")
 print(f"   Total margen: ${total_margin:,.1f}MM\n")
 
 # -----------------------------------------------------------------------------
 # PASO 5: Visualización del resumen
 # -----------------------------------------------------------------------------
-print("=" * 80)
-print("  RESUMEN DE SEGMENTACIÓN MEJORADA")
-print("=" * 80 + "\n")
 
-print("📊 Distribución por Comportamiento (6 clusters):\n")
+print("  RESUMEN DE SEGMENTACIÓN MEJORADA")
+
+
+print(" Distribución por Comportamiento (6 clusters):\n")
 comportamiento_resumen = cluster_summary_6[[
     "icono", "etiqueta_segmento", "n_comercios", "monto_total_millones",
     "margen_estimado_millones", "margen_pct_medio", "estrategia"
@@ -239,7 +227,7 @@ try:
 except NameError:
     print(dist_tamaño.sort_values("volumen_mm", ascending=False).to_string())
 
-print("\n🎯 Top 10 Micro-Segmentos Estratégicos (Matriz 2D):\n")
+print("\n Top 10 Micro-Segmentos Estratégicos (Matriz 2D):\n")
 top_matriz = matriz_segmentacion[[
     "segmento_comportamiento", "segmento_tamaño", "n_comercios",
     "volumen_total_mm", "margen_total_mm", "vol_share_pct", "es_estrategico"
@@ -249,9 +237,7 @@ try:
 except NameError:
     print(top_matriz.to_string())
 
-print("\n" + "=" * 80)
-print("✅ SEGMENTACIÓN MEJORADA COMPLETADA")
-print("=" * 80)
+
 print("\nPróximos pasos:")
 print("1. Usar 'segmento_comportamiento' para estrategias comerciales")
 print("2. Usar 'segmento_tamaño' para asignación de recursos")
